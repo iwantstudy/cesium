@@ -289,7 +289,7 @@ function createOnLoadCallback(viewer, file, proxy, clampToGround) {
               viewer.flyTo(dataSource);
             }
           })
-          .otherwise(function (error) {
+          .catch(function (error) {
             viewer.dropError.raiseEvent(viewer, fileName, error);
           });
       }

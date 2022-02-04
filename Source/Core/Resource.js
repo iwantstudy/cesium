@@ -1,10 +1,10 @@
 import Uri from "../ThirdParty/Uri.js";
-import when from "../ThirdParty/when.js";
 import appendForwardSlash from "./appendForwardSlash.js";
 import Check from "./Check.js";
 import clone from "./clone.js";
 import combine from "./combine.js";
 import defaultValue from "./defaultValue.js";
+import defer from "./defer.js";
 import defined from "./defined.js";
 import DeveloperError from "./DeveloperError.js";
 import getAbsoluteUri from "./getAbsoluteUri.js";
@@ -238,7 +238,7 @@ function combineQueryParameters(q1, q2, preserveQueryParameters) {
  *         resource.queryParameters.access_token = token;
  *         return true;
  *       })
- *       .otherwise(function() {
+ *       .catch(function() {
  *         return false;
  *       });
  *   }
@@ -366,7 +366,7 @@ Resource.supportsImageBitmapOptions = function () {
   }
 
   if (typeof createImageBitmap !== "function") {
-    supportsImageBitmapOptionsPromise = when.resolve(false);
+    supportsImageBitmapOptionsPromise = Promise.resolve(false);
     return supportsImageBitmapOptionsPromise;
   }
 
@@ -386,7 +386,7 @@ Resource.supportsImageBitmapOptions = function () {
     .then(function (imageBitmap) {
       return true;
     })
-    .otherwise(function () {
+    .catch(function () {
       return false;
     });
 
@@ -711,11 +711,11 @@ Resource.prototype.retryOnError = function (error) {
     typeof retryCallback !== "function" ||
     this._retryCount >= this.retryAttempts
   ) {
-    return when(false);
+    return Promise.resolve(false);
   }
 
   const that = this;
-  return when(retryCallback(this, error)).then(function (result) {
+  return Promise.resolve(retryCallback(this, error)).then(function (result) {
     ++that._retryCount;
 
     return result;
@@ -779,7 +779,7 @@ Resource.prototype.appendForwardSlash = function () {
  * // load a single URL asynchronously
  * resource.fetchArrayBuffer().then(function(arrayBuffer) {
  *     // use the data
- * }).otherwise(function(error) {
+ * }).catch(function(error) {
  *     // an error occurred
  * });
  *
@@ -823,7 +823,7 @@ Resource.fetchArrayBuffer = function (options) {
  * // load a single URL asynchronously
  * resource.fetchBlob().then(function(blob) {
  *     // use the data
- * }).otherwise(function(error) {
+ * }).catch(function(error) {
  *     // an error occurred
  * });
  *
@@ -872,12 +872,12 @@ Resource.fetchBlob = function (options) {
  * // load a single image asynchronously
  * resource.fetchImage().then(function(image) {
  *     // use the loaded image
- * }).otherwise(function(error) {
+ * }).catch(function(error) {
  *     // an error occurred
  * });
  *
  * // load several images in parallel
- * when.all([resource1.fetchImage(), resource2.fetchImage()]).then(function(images) {
+ * Promise.all([resource1.fetchImage(), resource2.fetchImage()]).then(function(images) {
  *     // images is an array containing all the loaded images
  * });
  *
@@ -969,7 +969,7 @@ Resource.prototype.fetchImage = function (options) {
       window.URL.revokeObjectURL(generatedBlobResource.url);
       return image;
     })
-    .otherwise(function (error) {
+    .catch(function (error) {
       if (defined(generatedBlobResource)) {
         window.URL.revokeObjectURL(generatedBlobResource.url);
       }
@@ -980,7 +980,7 @@ Resource.prototype.fetchImage = function (options) {
       // zero-length response that is returned when a tile is not available.
       error.blob = generatedBlob;
 
-      return when.reject(error);
+      return Promise.reject(error);
     });
 };
 
@@ -1010,7 +1010,7 @@ function fetchImage(options) {
       crossOrigin = resource.isCrossOriginUrl;
     }
 
-    const deferred = when.defer();
+    const deferred = defer();
     Resource._Implementations.createImage(
       request,
       crossOrigin,
@@ -1028,10 +1028,10 @@ function fetchImage(options) {
     return;
   }
 
-  return promise.otherwise(function (e) {
+  return promise.catch(function (e) {
     // Don't retry cancelled or otherwise aborted requests
     if (request.state !== RequestState.FAILED) {
-      return when.reject(e);
+      return Promise.reject(e);
     }
     return resource.retryOnError(e).then(function (retry) {
       if (retry) {
@@ -1046,7 +1046,7 @@ function fetchImage(options) {
           preferImageBitmap: preferImageBitmap,
         });
       }
-      return when.reject(e);
+      return Promise.reject(e);
     });
   });
 }
@@ -1097,7 +1097,7 @@ Resource.fetchImage = function (options) {
  * });
  * resource.fetchText().then(function(text) {
  *     // Do something with the text
- * }).otherwise(function(error) {
+ * }).catch(function(error) {
  *     // an error occurred
  * });
  *
@@ -1145,7 +1145,7 @@ Resource.fetchText = function (options) {
  * @example
  * resource.fetchJson().then(function(jsonData) {
  *     // Do something with the JSON object
- * }).otherwise(function(error) {
+ * }).catch(function(error) {
  *     // an error occurred
  * });
  *
@@ -1206,7 +1206,7 @@ Resource.fetchJson = function (options) {
  *   'X-Custom-Header' : 'some value'
  * }).then(function(document) {
  *     // Do something with the document
- * }).otherwise(function(error) {
+ * }).catch(function(error) {
  *     // an error occurred
  * });
  *
@@ -1251,7 +1251,7 @@ Resource.fetchXML = function (options) {
  * // load a data asynchronously
  * resource.fetchJsonp().then(function(data) {
  *     // use the loaded data
- * }).otherwise(function(error) {
+ * }).catch(function(error) {
  *     // an error occurred
  * });
  *
@@ -1281,7 +1281,7 @@ function fetchJsonp(resource, callbackParameterName, functionName) {
   const request = resource.request;
   request.url = resource.url;
   request.requestFunction = function () {
-    const deferred = when.defer();
+    const deferred = defer();
 
     //assign a function with that name in the global scope
     window[functionName] = function (data) {
@@ -1307,9 +1307,9 @@ function fetchJsonp(resource, callbackParameterName, functionName) {
     return;
   }
 
-  return promise.otherwise(function (e) {
+  return promise.catch(function (e) {
     if (request.state !== RequestState.FAILED) {
-      return when.reject(e);
+      return Promise.reject(e);
     }
 
     return resource.retryOnError(e).then(function (retry) {
@@ -1321,7 +1321,7 @@ function fetchJsonp(resource, callbackParameterName, functionName) {
         return fetchJsonp(resource, callbackParameterName, functionName);
       }
 
-      return when.reject(e);
+      return Promise.reject(e);
     });
   });
 }
@@ -1362,7 +1362,7 @@ Resource.prototype._makeRequest = function (options) {
     const overrideMimeType = options.overrideMimeType;
     const method = options.method;
     const data = options.data;
-    const deferred = when.defer();
+    const deferred = defer();
     const xhr = Resource._Implementations.loadWithXhr(
       resource.url,
       responseType,
@@ -1391,10 +1391,10 @@ Resource.prototype._makeRequest = function (options) {
       request.cancelFunction = undefined;
       return data;
     })
-    .otherwise(function (e) {
+    .catch(function (e) {
       request.cancelFunction = undefined;
       if (request.state !== RequestState.FAILED) {
-        return when.reject(e);
+        return Promise.reject(e);
       }
 
       return resource.retryOnError(e).then(function (retry) {
@@ -1406,7 +1406,7 @@ Resource.prototype._makeRequest = function (options) {
           return resource.fetch(options);
         }
 
-        return when.reject(e);
+        return Promise.reject(e);
       });
     });
 };
@@ -1483,7 +1483,7 @@ function decodeDataUri(dataUriRegexResult, responseType) {
  * resource.fetch()
  *   .then(function(body) {
  *       // use the data
- *   }).otherwise(function(error) {
+ *   }).catch(function(error) {
  *       // an error occurred
  *   });
  *
@@ -1539,7 +1539,7 @@ Resource.fetch = function (options) {
  * resource.delete()
  *   .then(function(body) {
  *       // use the data
- *   }).otherwise(function(error) {
+ *   }).catch(function(error) {
  *       // an error occurred
  *   });
  *
@@ -1597,7 +1597,7 @@ Resource.delete = function (options) {
  * resource.head()
  *   .then(function(headers) {
  *       // use the data
- *   }).otherwise(function(error) {
+ *   }).catch(function(error) {
  *       // an error occurred
  *   });
  *
@@ -1653,7 +1653,7 @@ Resource.head = function (options) {
  * resource.options()
  *   .then(function(headers) {
  *       // use the data
- *   }).otherwise(function(error) {
+ *   }).catch(function(error) {
  *       // an error occurred
  *   });
  *
@@ -1711,7 +1711,7 @@ Resource.options = function (options) {
  * resource.post(data)
  *   .then(function(result) {
  *       // use the result
- *   }).otherwise(function(error) {
+ *   }).catch(function(error) {
  *       // an error occurred
  *   });
  *
@@ -1772,7 +1772,7 @@ Resource.post = function (options) {
  * resource.put(data)
  *   .then(function(result) {
  *       // use the result
- *   }).otherwise(function(error) {
+ *   }).catch(function(error) {
  *       // an error occurred
  *   });
  *
@@ -1833,7 +1833,7 @@ Resource.put = function (options) {
  * resource.patch(data)
  *   .then(function(result) {
  *       // use the result
- *   }).otherwise(function(error) {
+ *   }).catch(function(error) {
  *       // an error occurred
  *   });
  *
@@ -1929,7 +1929,7 @@ Resource._Implementations.createImage = function (
       }
       const responseType = "blob";
       const method = "GET";
-      const xhrDeferred = when.defer();
+      const xhrDeferred = defer();
       const xhr = Resource._Implementations.loadWithXhr(
         url,
         responseType,
@@ -1966,7 +1966,7 @@ Resource._Implementations.createImage = function (
         })
         .then(deferred.resolve);
     })
-    .otherwise(deferred.reject);
+    .catch(deferred.reject);
 };
 
 /**
@@ -2209,7 +2209,7 @@ Resource._Implementations.loadAndExecuteScript = function (
   functionName,
   deferred
 ) {
-  return loadAndExecuteScript(url, functionName).otherwise(deferred.reject);
+  return loadAndExecuteScript(url, functionName).catch(deferred.reject);
 };
 
 /**

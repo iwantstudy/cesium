@@ -10,7 +10,6 @@ import Resource from "../Core/Resource.js";
 import RuntimeError from "../Core/RuntimeError.js";
 import Framebuffer from "../Renderer/Framebuffer.js";
 import Texture from "../Renderer/Texture.js";
-import when from "../ThirdParty/when.js";
 
 // The atlas is made up of regions of space called nodes that contain images or child nodes.
 function TextureAtlasNode(
@@ -396,7 +395,7 @@ TextureAtlas.prototype.addImage = function (id, image) {
 
   const that = this;
 
-  indexPromise = when(image, function (image) {
+  indexPromise = Promise.resolve(image).then(function (image) {
     if (that.isDestroyed()) {
       return -1;
     }
@@ -438,7 +437,7 @@ TextureAtlas.prototype.addSubRegion = function (id, subRegion) {
   }
 
   const that = this;
-  return when(indexPromise, function (index) {
+  return Promise.resolve(indexPromise).then(function (index) {
     if (index === -1) {
       // the atlas is destroyed
       return -1;

@@ -35,7 +35,6 @@ import StripeMaterial from "../Shaders/Materials/StripeMaterial.js";
 import TextureMagnificationFilter from "../Renderer/TextureMagnificationFilter.js";
 import TextureMinificationFilter from "../Renderer/TextureMinificationFilter.js";
 import WaterMaterial from "../Shaders/Materials/Water.js";
-import when from "../ThirdParty/when.js";
 
 /**
  * A Material defines surface appearance through a combination of diffuse, specular,
@@ -909,7 +908,7 @@ function createTexture2DUpdateFunction(uniformId) {
               image: image,
             });
           })
-          .otherwise(function () {
+          .catch(function () {
             if (defined(texture) && texture !== material._defaultTexture) {
               texture.destroy();
             }
@@ -971,7 +970,7 @@ function createCubeMapUpdateFunction(uniformId) {
         Resource.createIfNeeded(uniformValue.negativeZ).fetchImage(),
       ];
 
-      when.all(promises).then(function (images) {
+      Promise.all(promises).then(function (images) {
         material._loadedCubeMaps.push({
           id: uniformId,
           images: images,
