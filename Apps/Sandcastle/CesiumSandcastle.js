@@ -47,7 +47,6 @@ require({
   "dojo/parser",
   "dojo/promise/all",
   "dojo/query",
-  "dojo/when",
   "dojo/request/script",
   "Sandcastle/LinkButton",
   "ThirdParty/clipboard.min",
@@ -92,7 +91,6 @@ require({
   parser,
   all,
   query,
-  when,
   dojoscript,
   LinkButton,
   ClipboardJS,
@@ -826,7 +824,7 @@ require({
             const html = defined(htmlFile) ? htmlFile.content : defaultHtml; // Use the default html for old gists
             applyLoadedDemo(code, html);
           })
-          .otherwise(function (error) {
+          .catch(function (error) {
             appendConsole(
               "consoleError",
               `Unable to GET gist from GitHub API. This could be due to too many requests from your IP. Try again in an hour or copy and paste the code from the gist: https://gist.github.com/${queryObject.gist}`,
@@ -1470,7 +1468,7 @@ require({
     });
   }
 
-  when(promise).then(function () {
+  Promise.resolve(promise).then(function () {
     dom.byId("searchDemos").appendChild(galleryErrorMsg);
     searchContainer = registry.byId("searchContainer");
 
