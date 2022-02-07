@@ -4,7 +4,7 @@ import formatError from "../Core/formatError.js";
 
 // createXXXGeometry functions may return Geometry or a Promise that resolves to Geometry
 // if the function requires access to ApproximateTerrainHeights.
-// For fully synchronous functions, just wrapping the function call in a `when` Promise doesn't
+// For fully synchronous functions, just wrapping the function call in a Promise doesn't
 // handle errors correctly, hence try-catch
 function callAndWrap(workerFunction, parameters, transferableObjects) {
   let resultOrPromise;

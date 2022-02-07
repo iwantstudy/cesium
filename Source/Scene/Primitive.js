@@ -1251,12 +1251,14 @@ function loadAsynchronous(primitive, frameState) {
 
     primitive._state = PrimitiveState.CREATING;
 
-    Promise.all(promises, function (results) {
-      primitive._createGeometryResults = results;
-      primitive._state = PrimitiveState.CREATED;
-    }).catch(function (error) {
-      setReady(primitive, frameState, PrimitiveState.FAILED, error);
-    });
+    Promise.all(promises)
+      .then(function (results) {
+        primitive._createGeometryResults = results;
+        primitive._state = PrimitiveState.CREATED;
+      })
+      .catch(function (error) {
+        setReady(primitive, frameState, PrimitiveState.FAILED, error);
+      });
   } else if (primitive._state === PrimitiveState.CREATED) {
     const transferableObjects = [];
     instances = Array.isArray(primitive.geometryInstances)

@@ -238,7 +238,7 @@ const emptyTransferableObjectArray = [];
  * if (!Cesium.defined(promise)) {
  *     // too many active tasks - try again later
  * } else {
- *     Promise.resolve(promise).then(function(result) {
+ *     promise.then(function(result) {
  *         // use the result of the task
  *     });
  * }

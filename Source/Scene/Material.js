@@ -901,7 +901,7 @@ function createTexture2DUpdateFunction(uniformId) {
           promise = resource.fetchImage();
         }
 
-        promise
+        Promise.resolve(promise)
           .then(function (image) {
             material._loadedImages.push({
               id: uniformId,
