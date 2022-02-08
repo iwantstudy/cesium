@@ -1556,7 +1556,7 @@ describe("Scene/WebMapServiceImageryProvider", function () {
           .then(function (features) {
             expect(features.length).toBe(0);
           })
-          .otherwise(function () {});
+          .catch(function () {});
       });
     });
 

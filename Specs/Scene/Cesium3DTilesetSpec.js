@@ -3,6 +3,7 @@ import { Cartesian3 } from "../../Source/Cesium.js";
 import { Cartographic } from "../../Source/Cesium.js";
 import { Color } from "../../Source/Cesium.js";
 import { CullingVolume } from "../../Source/Cesium.js";
+import { defer } from "../../Source/Cesium.js";
 import { defined } from "../../Source/Cesium.js";
 import { getAbsoluteUri } from "../../Source/Cesium.js";
 import { getJsonFromTypedArray } from "../../Source/Cesium.js";
@@ -37,7 +38,6 @@ import Cesium3DTilesTester from "../Cesium3DTilesTester.js";
 import createScene from "../createScene.js";
 import generateJsonBuffer from "../generateJsonBuffer.js";
 import pollToPromise from "../pollToPromise.js";
-import { when } from "../../Source/Cesium.js";
 
 describe(
   "Scene/Cesium3DTileset",
@@ -270,7 +270,7 @@ describe(
         .then(function () {
           fail("should not resolve");
         })
-        .otherwise(function (error) {
+        .catch(function (error) {
           expect(tileset.ready).toEqual(false);
         });
     });
@@ -288,7 +288,7 @@ describe(
         .then(function (result) {
           expect(result).toEqual(tilesetJson);
         })
-        .otherwise(function (error) {
+        .catch(function (error) {
           fail("should not fail");
         });
     });
@@ -315,7 +315,7 @@ describe(
         .then(function () {
           expect(tileset.ready).toEqual(true);
         })
-        .otherwise(function (error) {
+        .catch(function (error) {
           fail("should not fail");
         });
     });
@@ -327,14 +327,14 @@ describe(
 
       // setup tileset with invalid url (overridden loadJson should replace invalid url with correct url)
       const tileset = new Cesium3DTileset({
-        url: when.resolve(resource),
+        url: Promise.resolve(resource),
       });
 
       return tileset.readyPromise
         .then(function () {
           expect(tileset.ready).toEqual(true);
         })
-        .otherwise(function (error) {
+        .catch(function (error) {
           fail("should not fail");
         });
     });
@@ -353,7 +353,7 @@ describe(
         .then(function () {
           expect(tileset.ready).toEqual(true);
         })
-        .otherwise(function (error) {
+        .catch(function (error) {
           fail("should not fail");
         });
     });
@@ -373,7 +373,7 @@ describe(
         .then(function () {
           fail("should not resolve");
         })
-        .otherwise(function (error) {
+        .catch(function (error) {
           expect(tileset.ready).toEqual(false);
         });
     });
@@ -395,7 +395,7 @@ describe(
         .then(function () {
           fail("should not resolve");
         })
-        .otherwise(function (error) {
+        .catch(function (error) {
           expect(tileset.ready).toEqual(false);
         });
     });
@@ -595,7 +595,7 @@ describe(
           .then(function () {
             fail("should not resolve");
           })
-          .otherwise(function (error) {
+          .catch(function (error) {
             expect(error.message).toBe("Invalid tile content.");
             expect(root._contentState).toEqual(Cesium3DTileContentState.FAILED);
           });
@@ -625,7 +625,7 @@ describe(
           .then(function () {
             fail("should not resolve");
           })
-          .otherwise(function (error) {
+          .catch(function (error) {
             expect(root._contentState).toEqual(Cesium3DTileContentState.FAILED);
             const statistics = tileset.statistics;
             expect(statistics.numberOfAttemptedRequests).toBe(0);
@@ -663,7 +663,7 @@ describe(
           .then(function () {
             fail("should not resolve");
           })
-          .otherwise(function (error) {
+          .catch(function (error) {
             expect(root._contentState).toEqual(Cesium3DTileContentState.FAILED);
             const statistics = tileset.statistics;
             expect(statistics.numberOfAttemptedRequests).toBe(0);
@@ -2475,7 +2475,7 @@ describe(
             .then(function (root) {
               fail("should not resolve");
             })
-            .otherwise(function (error) {
+            .catch(function (error) {
               // Expect the root to not have added any children from the external tileset JSON file
               expect(root.children.length).toEqual(0);
             });
@@ -2496,7 +2496,7 @@ describe(
           .then(function (content) {
             fail("should not resolve");
           })
-          .otherwise(function (error) {
+          .catch(function (error) {
             expect(root._contentState).toBe(Cesium3DTileContentState.FAILED);
           });
       });
@@ -3004,7 +3004,7 @@ describe(
                 expect(rgba[3]).toEqual(255);
               });
             })
-            .otherwise(function (error) {
+            .catch(function (error) {
               expect(error).not.toBeDefined();
             });
         }
@@ -3997,7 +3997,7 @@ describe(
           deferred,
           overrideMimeType
         ) {
-          const newDeferred = when.defer();
+          const newDeferred = defer();
           Resource._DefaultImplementations.loadWithXhr(
             tilesetSubtreeUrl,
             responseType,
@@ -5042,7 +5042,7 @@ describe(
                 expect(statistics.numberOfTilesProcessing).toBe(1);
                 expect(statistics.numberOfTilesWithContentReady).toBe(0);
               })
-              .otherwise(fail);
+              .catch(fail);
 
             return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset).then(
               function () {
@@ -5106,7 +5106,7 @@ describe(
                 expect(statistics.numberOfTilesProcessing).toBe(1);
                 expect(statistics.numberOfTilesWithContentReady).toBe(0);
               })
-              .otherwise(fail);
+              .catch(fail);
 
             return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset).then(
               function () {
@@ -5206,7 +5206,7 @@ describe(
             root: {},
           };
           const buffer = generateJsonBuffer(externalTileset).buffer;
-          return when.resolve(buffer);
+          return Promise.resolve(buffer);
         });
 
         viewNothing();

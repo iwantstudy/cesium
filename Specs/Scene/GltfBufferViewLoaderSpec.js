@@ -1,9 +1,9 @@
 import {
   BufferLoader,
+  defer,
   GltfBufferViewLoader,
   Resource,
   ResourceCache,
-  when,
 } from "../../Source/Cesium.js";
 
 describe("Scene/GltfBufferViewLoader", function () {
@@ -173,7 +173,7 @@ describe("Scene/GltfBufferViewLoader", function () {
   it("rejects promise if buffer fails to load", function () {
     const error = new Error("404 Not Found");
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.reject(error)
+      Promise.reject(error)
     );
 
     const bufferViewLoader = new GltfBufferViewLoader({
@@ -190,7 +190,7 @@ describe("Scene/GltfBufferViewLoader", function () {
       .then(function (bufferViewLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load buffer view\nFailed to load external buffer: https://example.com/external.bin\n404 Not Found"
         );
@@ -220,7 +220,7 @@ describe("Scene/GltfBufferViewLoader", function () {
 
   it("loads buffer view for external buffer", function () {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(bufferArrayBuffer)
+      Promise.resolve(bufferArrayBuffer)
     );
 
     const bufferViewLoader = new GltfBufferViewLoader({
@@ -239,7 +239,7 @@ describe("Scene/GltfBufferViewLoader", function () {
 
   it("destroys buffer view", function () {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(bufferArrayBuffer)
+      Promise.resolve(bufferArrayBuffer)
     );
 
     const unloadBuffer = spyOn(
@@ -298,7 +298,7 @@ describe("Scene/GltfBufferViewLoader", function () {
   });
 
   function resolveAfterDestroy(reject) {
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
       deferredPromise.promise
     );

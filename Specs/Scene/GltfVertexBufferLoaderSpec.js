@@ -2,6 +2,7 @@ import {
   Buffer,
   Cartesian3,
   ComponentDatatype,
+  defer,
   DracoLoader,
   GltfBufferViewLoader,
   GltfDracoLoader,
@@ -9,7 +10,6 @@ import {
   JobScheduler,
   Resource,
   ResourceCache,
-  when,
 } from "../../Source/Cesium.js";
 import concatTypedArrays from "../concatTypedArrays.js";
 import createScene from "../createScene.js";
@@ -333,7 +333,7 @@ describe(
     it("rejects promise if buffer view fails to load", function () {
       const error = new Error("404 Not Found");
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.reject(error)
+        Promise.reject(error)
       );
 
       const vertexBufferLoader = new GltfVertexBufferLoader({
@@ -350,7 +350,7 @@ describe(
         .then(function (vertexBufferLoader) {
           fail();
         })
-        .otherwise(function (runtimeError) {
+        .catch(function (runtimeError) {
           expect(runtimeError.message).toBe(
             "Failed to load vertex buffer\nFailed to load buffer view\nFailed to load external buffer: https://example.com/external.bin\n404 Not Found"
           );
@@ -359,12 +359,12 @@ describe(
 
     it("rejects promise if draco fails to load", function () {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(dracoArrayBuffer)
+        Promise.resolve(dracoArrayBuffer)
       );
 
       const error = new Error("Draco decode failed");
       spyOn(DracoLoader, "decodeBufferView").and.returnValue(
-        when.reject(error)
+        Promise.reject(error)
       );
 
       const vertexBufferLoader = new GltfVertexBufferLoader({
@@ -383,7 +383,7 @@ describe(
         .then(function (vertexBufferLoader) {
           fail();
         })
-        .otherwise(function (runtimeError) {
+        .catch(function (runtimeError) {
           expect(runtimeError.message).toBe(
             "Failed to load vertex buffer\nFailed to load Draco\nDraco decode failed"
           );
@@ -392,7 +392,7 @@ describe(
 
     it("loads from buffer view", function () {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(arrayBuffer)
+        Promise.resolve(arrayBuffer)
       );
 
       // Simulate JobScheduler not being ready for a few frames
@@ -434,7 +434,7 @@ describe(
 
     it("creates vertex buffer synchronously", function () {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(arrayBuffer)
+        Promise.resolve(arrayBuffer)
       );
 
       const vertexBufferLoader = new GltfVertexBufferLoader({
@@ -460,7 +460,7 @@ describe(
 
     it("loads as typed array", function () {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(arrayBuffer)
+        Promise.resolve(arrayBuffer)
       );
 
       spyOn(Buffer, "createVertexBuffer").and.callThrough();
@@ -490,7 +490,7 @@ describe(
 
     it("loads positions from draco", function () {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(arrayBuffer)
+        Promise.resolve(arrayBuffer)
       );
 
       // Simulate decodeBufferView not being ready for a few frames
@@ -498,7 +498,7 @@ describe(
       let processCallsCount = 0;
       spyOn(DracoLoader, "decodeBufferView").and.callFake(function () {
         if (processCallsCount++ === processCallsTotal) {
-          return when.resolve(decodeDracoResults);
+          return Promise.resolve(decodeDracoResults);
         }
         return undefined;
       });
@@ -542,11 +542,11 @@ describe(
 
     it("loads normals from draco", function () {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(arrayBuffer)
+        Promise.resolve(arrayBuffer)
       );
 
       spyOn(DracoLoader, "decodeBufferView").and.callFake(function () {
-        return when.resolve(decodeDracoResults);
+        return Promise.resolve(decodeDracoResults);
       });
 
       const vertexBufferLoader = new GltfVertexBufferLoader({
@@ -582,7 +582,7 @@ describe(
 
     it("destroys vertex buffer loaded from buffer view", function () {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(arrayBuffer)
+        Promise.resolve(arrayBuffer)
       );
 
       const unloadBufferView = spyOn(
@@ -623,11 +623,11 @@ describe(
 
     it("destroys vertex buffer loaded from draco", function () {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(arrayBuffer)
+        Promise.resolve(arrayBuffer)
       );
 
       spyOn(DracoLoader, "decodeBufferView").and.returnValue(
-        when.resolve(decodeDracoResults)
+        Promise.resolve(decodeDracoResults)
       );
 
       const unloadDraco = spyOn(
@@ -668,7 +668,7 @@ describe(
     });
 
     function resolveBufferViewAfterDestroy(reject) {
-      const deferredPromise = when.defer();
+      const deferredPromise = defer();
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
         deferredPromise.promise
       );
@@ -717,10 +717,10 @@ describe(
 
     function resolveDracoAfterDestroy(reject) {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        when.resolve(arrayBuffer)
+        Promise.resolve(arrayBuffer)
       );
 
-      const deferredPromise = when.defer();
+      const deferredPromise = defer();
       const decodeBufferView = spyOn(
         DracoLoader,
         "decodeBufferView"

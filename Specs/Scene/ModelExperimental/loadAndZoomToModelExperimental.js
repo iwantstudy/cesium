@@ -1,4 +1,4 @@
-import { ModelExperimental, when } from "../../../Source/Cesium.js";
+import { ModelExperimental } from "../../../Source/Cesium.js";
 import pollToPromise from "../../pollToPromise.js";
 
 function loadAndZoomToModelExperimental(options, scene) {
@@ -23,7 +23,7 @@ function loadAndZoomToModelExperimental(options, scene) {
       backFaceCulling: options.backFaceCulling,
     });
   } catch (error) {
-    return when.reject(error);
+    return Promise.reject(error);
   }
 
   scene.primitives.add(model);
@@ -31,10 +31,10 @@ function loadAndZoomToModelExperimental(options, scene) {
   let finished = false;
   let rejected = false;
   model.readyPromise
-    .otherwise(function () {
+    .catch(function () {
       rejected = true;
     })
-    .always(function () {
+    .finally(function () {
       finished = true;
     });
 

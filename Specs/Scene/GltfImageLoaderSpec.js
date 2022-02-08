@@ -2,12 +2,12 @@ import {
   BufferLoader,
   clone,
   CompressedTextureBuffer,
+  defer,
   GltfBufferViewLoader,
   GltfImageLoader,
   FeatureDetection,
   Resource,
   ResourceCache,
-  when,
 } from "../../Source/Cesium.js";
 import createContext from "../createContext.js";
 import dataUriToBuffer from "../dataUriToBuffer.js";
@@ -95,7 +95,7 @@ describe("Scene/GltfImageLoader", function () {
       ktx2BasisMipmapBuffer = new Uint8Array(arrayBuffer);
     });
 
-    return when.all([ktx2BasisBufferPromise, ktx2BasisMipmapBufferPromise]);
+    return Promise.all([ktx2BasisBufferPromise, ktx2BasisMipmapBufferPromise]);
   });
 
   afterAll(function () {
@@ -169,7 +169,7 @@ describe("Scene/GltfImageLoader", function () {
   it("rejects promise if buffer view fails to load", function () {
     const error = new Error("404 Not Found");
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.reject(error)
+      Promise.reject(error)
     );
 
     const imageLoader = new GltfImageLoader({
@@ -186,7 +186,7 @@ describe("Scene/GltfImageLoader", function () {
       .then(function (imageLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load embedded image\nFailed to load buffer view\nFailed to load external buffer: https://example.com/external.bin\n404 Not Found"
         );
@@ -195,7 +195,7 @@ describe("Scene/GltfImageLoader", function () {
 
   it("rejects promise if image format is not recognized", function () {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(gifBuffer)
+      Promise.resolve(gifBuffer)
     );
 
     const imageLoader = new GltfImageLoader({
@@ -212,7 +212,7 @@ describe("Scene/GltfImageLoader", function () {
       .then(function (imageLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load embedded image\nImage format is not recognized"
         );
@@ -221,7 +221,9 @@ describe("Scene/GltfImageLoader", function () {
 
   it("rejects promise if uri fails to load", function () {
     const error = new Error("404 Not Found");
-    spyOn(Resource.prototype, "fetchImage").and.returnValue(when.reject(error));
+    spyOn(Resource.prototype, "fetchImage").and.returnValue(
+      Promise.reject(error)
+    );
 
     const imageLoader = new GltfImageLoader({
       resourceCache: ResourceCache,
@@ -237,7 +239,7 @@ describe("Scene/GltfImageLoader", function () {
       .then(function (imageLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load image: image.png\n404 Not Found"
         );
@@ -246,7 +248,7 @@ describe("Scene/GltfImageLoader", function () {
 
   function loadsFromBufferView(imageBuffer) {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(imageBuffer)
+      Promise.resolve(imageBuffer)
     );
 
     const imageLoader = new GltfImageLoader({
@@ -291,7 +293,7 @@ describe("Scene/GltfImageLoader", function () {
     }
 
     spyOn(BufferLoader, "_fetchArrayBuffer").and.returnValue(
-      when.resolve(ktx2BasisBuffer)
+      Promise.resolve(ktx2BasisBuffer)
     );
 
     const imageLoader = new GltfImageLoader({
@@ -318,7 +320,7 @@ describe("Scene/GltfImageLoader", function () {
     }
 
     spyOn(BufferLoader, "_fetchArrayBuffer").and.returnValue(
-      when.resolve(ktx2BasisMipmapBuffer)
+      Promise.resolve(ktx2BasisMipmapBuffer)
     );
 
     const imageLoader = new GltfImageLoader({
@@ -341,7 +343,7 @@ describe("Scene/GltfImageLoader", function () {
 
   it("loads from uri", function () {
     spyOn(Resource.prototype, "fetchImage").and.returnValue(
-      when.resolve(image)
+      Promise.resolve(image)
     );
 
     const imageLoader = new GltfImageLoader({
@@ -392,7 +394,7 @@ describe("Scene/GltfImageLoader", function () {
 
   it("destroys image loader", function () {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(pngBuffer)
+      Promise.resolve(pngBuffer)
     );
 
     const unloadBufferView = spyOn(
@@ -424,7 +426,7 @@ describe("Scene/GltfImageLoader", function () {
   });
 
   function resolveBufferViewAfterDestroy(reject) {
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
       deferredPromise.promise
     );
@@ -473,10 +475,10 @@ describe("Scene/GltfImageLoader", function () {
 
   function resolveImageFromTypedArrayAfterDestroy(reject) {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(pngBuffer)
+      Promise.resolve(pngBuffer)
     );
 
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     spyOn(GltfImageLoader, "_loadImageFromTypedArray").and.returnValue(
       deferredPromise.promise
     );
@@ -524,7 +526,7 @@ describe("Scene/GltfImageLoader", function () {
   });
 
   function resolveUriAfterDestroy(reject) {
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     spyOn(Resource.prototype, "fetchImage").and.returnValue(
       deferredPromise.promise
     );

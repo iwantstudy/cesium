@@ -18,7 +18,6 @@ import {
   Pass,
   PerspectiveFrustum,
   Transforms,
-  when,
 } from "../../Source/Cesium.js";
 import Cesium3DTilesTester from "../Cesium3DTilesTester.js";
 import createCanvas from "../createCanvas.js";
@@ -320,7 +319,7 @@ describe(
       }).then(function () {
         const decoder = DracoLoader._getDecoderTaskProcessor();
         spyOn(decoder, "scheduleTask").and.returnValue(
-          when.reject({ message: "my error" })
+          Promise.reject({ message: "my error" })
         );
         return Cesium3DTilesTester.loadTileset(scene, pointCloudDracoUrl).then(
           function (tileset) {
@@ -329,7 +328,7 @@ describe(
               .then(function () {
                 fail("should not resolve");
               })
-              .otherwise(function (error) {
+              .catch(function (error) {
                 expect(error.message).toBe("my error");
               });
           }
@@ -961,7 +960,7 @@ describe(
         1000 * 11, // 3 shorts (quantized xyz), 3 bytes (rgb), 2 bytes (oct-encoded normal)
       ];
 
-      return when.all(promises).then(function (tilesets) {
+      return Promise.all(promises).then(function (tilesets) {
         const length = tilesets.length;
         for (let i = 0; i < length; ++i) {
           const content = tilesets[i].root.content;

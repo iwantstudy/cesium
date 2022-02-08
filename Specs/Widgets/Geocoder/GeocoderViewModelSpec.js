@@ -2,7 +2,6 @@ import { Cartesian3 } from "../../../Source/Cesium.js";
 import { Rectangle } from "../../../Source/Cesium.js";
 import createScene from "../../createScene.js";
 import pollToPromise from "../../pollToPromise.js";
-import { when } from "../../../Source/Cesium.js";
 import { GeocoderViewModel } from "../../../Source/Cesium.js";
 
 describe(
@@ -28,7 +27,7 @@ describe(
     const customGeocoderOptions = {
       autoComplete: true,
       geocode: function (input) {
-        return when.resolve(geocoderResults1);
+        return Promise.resolve(geocoderResults1);
       },
     };
 
@@ -45,14 +44,14 @@ describe(
     const customGeocoderOptions2 = {
       autoComplete: true,
       geocode: function (input) {
-        return when.resolve(geocoderResults2);
+        return Promise.resolve(geocoderResults2);
       },
     };
 
     const noResultsGeocoder = {
       autoComplete: true,
       geocode: function (input) {
-        return when.resolve([]);
+        return Promise.resolve([]);
       },
     };
 

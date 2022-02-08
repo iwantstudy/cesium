@@ -379,7 +379,7 @@ ArcGISTiledElevationTerrainProvider.prototype.requestTileGeometry = function (
 
   const that = this;
   const tilesAvailable = this._tilesAvailable;
-  return Promise.join(promise, availabilityPromise)
+  return Promise.all([promise, availabilityPromise])
     .then(function (result) {
       return new HeightmapTerrainData({
         buffer: result[0],

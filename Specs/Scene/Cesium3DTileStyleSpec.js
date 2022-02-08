@@ -55,7 +55,7 @@ describe("Scene/Cesium3DTileStyle", function () {
       .then(function (style) {
         fail("should not resolve");
       })
-      .otherwise(function (error) {
+      .catch(function (error) {
         expect(tileStyle.ready).toEqual(false);
         expect(error.statusCode).toEqual(404);
       });
@@ -138,7 +138,7 @@ describe("Scene/Cesium3DTileStyle", function () {
         expect(style.labelVerticalOrigin).toEqual(new Expression("0"));
         expect(tileStyle.ready).toEqual(true);
       })
-      .otherwise(function () {
+      .catch(function () {
         fail("should load style.json");
       });
   });
@@ -224,7 +224,7 @@ describe("Scene/Cesium3DTileStyle", function () {
         expect(style.labelVerticalOrigin).toEqual(new Expression("0"));
         expect(tileStyle.ready).toEqual(true);
       })
-      .otherwise(function () {
+      .catch(function () {
         fail("should load style.json");
       });
   });

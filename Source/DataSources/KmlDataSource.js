@@ -227,7 +227,7 @@ DeferredLoading.prototype.wait = function () {
     deferred.resolve();
   }
 
-  return Promise.join(deferred.promise, Promise.all(this._promises));
+  return Promise.all([deferred.promise, Promise.all(this._promises)]);
 };
 
 DeferredLoading.prototype.process = function () {

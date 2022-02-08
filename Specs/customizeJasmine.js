@@ -1,4 +1,3 @@
-import { when } from "../Source/Cesium.js";
 import addDefaultMatchers from "./addDefaultMatchers.js";
 import equalsMethodEqualityTester from "./equalsMethodEqualityTester.js";
 
@@ -37,16 +36,8 @@ function customizeJasmine(
     originalIt(
       description,
       function (done) {
-        const result = f();
-        when(
-          result,
-          function () {
-            done();
-          },
-          function (e) {
-            done.fail(`promise rejected: ${e.toString()}`);
-          }
-        );
+        const result = f(done);
+        Promise.resolve(result).then(done).catch(done.fail);
       },
       timeout,
       categories
@@ -57,16 +48,8 @@ function customizeJasmine(
 
   window.beforeEach = function (f) {
     originalBeforeEach(function (done) {
-      const result = f();
-      when(
-        result,
-        function () {
-          done();
-        },
-        function (e) {
-          done.fail(`promise rejected: ${e.toString()}`);
-        }
-      );
+      const result = f(done);
+      Promise.resolve(result).then(done).catch(done.fail);
     });
   };
 
@@ -74,16 +57,8 @@ function customizeJasmine(
 
   window.afterEach = function (f) {
     originalAfterEach(function (done) {
-      const result = f();
-      when(
-        result,
-        function () {
-          done();
-        },
-        function (e) {
-          done.fail(`promise rejected: ${e.toString()}`);
-        }
-      );
+      const result = f(done);
+      Promise.resolve(result).then(done).catch(done.fail);
     });
   };
 
@@ -91,16 +66,8 @@ function customizeJasmine(
 
   window.beforeAll = function (f) {
     originalBeforeAll(function (done) {
-      const result = f();
-      when(
-        result,
-        function () {
-          done();
-        },
-        function (e) {
-          done.fail(`promise rejected: ${e.toString()}`);
-        }
-      );
+      const result = f(done);
+      Promise.resolve(result).then(done).catch(done.fail);
     });
   };
 
@@ -108,16 +75,8 @@ function customizeJasmine(
 
   window.afterAll = function (f) {
     originalAfterAll(function (done) {
-      const result = f();
-      when(
-        result,
-        function () {
-          done();
-        },
-        function (e) {
-          done.fail(`promise rejected: ${e.toString()}`);
-        }
-      );
+      const result = f(done);
+      Promise.resolve(result).then(done).catch(done.fail);
     });
   };
 

@@ -1,11 +1,10 @@
 import createTileKey from "./createTileKey.js";
 import runLater from "./runLater.js";
-import { defined } from "../Source/Cesium.js";
+import { defer, defined } from "../Source/Cesium.js";
 import { GeographicTilingScheme } from "../Source/Cesium.js";
 import { HeightmapTerrainData } from "../Source/Cesium.js";
 import { RuntimeError } from "../Source/Cesium.js";
 import { TerrainProvider } from "../Source/Cesium.js";
-import { when } from "../Source/Cesium.js";
 
 function MockTerrainProvider() {
   this.tilingScheme = new GeographicTilingScheme();
@@ -16,7 +15,7 @@ function MockTerrainProvider() {
     this.tilingScheme.getNumberOfXTilesAtLevel(0)
   );
   this.ready = true;
-  this.readyPromise = when.resolve();
+  this.readyPromise = defer();
   this.hasWaterMask = true;
 
   this._tileDataAvailable = {};
@@ -48,7 +47,7 @@ MockTerrainProvider.prototype.requestTileGeometry = function (
       throw new RuntimeError("requestTileGeometry failed as requested.");
     }
 
-    return when(willSucceed).then(function () {
+    return Promise.resolve(willSucceed).then(function () {
       return createTerrainData(that, x, y, level, false);
     });
   });
@@ -298,7 +297,7 @@ function createTerrainData(terrainProvider, x, y, level, upsampled) {
     const args = arguments;
 
     return runLater(function () {
-      return when(willSucceed).then(function () {
+      return Promise.resolve(willSucceed).then(function () {
         return originalCreateMesh.apply(terrainData, args);
       });
     });

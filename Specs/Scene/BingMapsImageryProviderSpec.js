@@ -13,7 +13,6 @@ import { ImageryProvider } from "../../Source/Cesium.js";
 import { ImageryState } from "../../Source/Cesium.js";
 import pollToPromise from "../pollToPromise.js";
 import { Uri } from "../../Source/Cesium.js";
-import { when } from "../../Source/Cesium.js";
 
 describe("Scene/BingMapsImageryProvider", function () {
   let supportsImageBitmapOptions;
@@ -423,7 +422,7 @@ describe("Scene/BingMapsImageryProvider", function () {
       .then(function () {
         fail("should not resolve");
       })
-      .otherwise(function (e) {
+      .catch(function (e) {
         expect(provider.ready).toBe(false);
         expect(e.message).toContain(url);
       });
@@ -668,7 +667,7 @@ describe("Scene/BingMapsImageryProvider", function () {
     // Fake ImageryProvider.loadImage's expected output in the case of an empty tile
     const e = new Error();
     e.blob = { size: 0 };
-    const errorPromise = when.reject(e);
+    const errorPromise = Promise.reject(e);
 
     spyOn(ImageryProvider, "loadImage").and.returnValue(errorPromise);
 

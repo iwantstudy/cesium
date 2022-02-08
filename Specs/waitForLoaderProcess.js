@@ -3,7 +3,7 @@ import pollToPromise from "./pollToPromise.js";
 
 export default function waitForLoaderProcess(loader, scene) {
   let loaderFinished = false;
-  loader.promise.always(function () {
+  loader.promise.finally(function () {
     loaderFinished = true;
   });
   return pollToPromise(function () {

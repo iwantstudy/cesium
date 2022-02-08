@@ -1,10 +1,10 @@
 import {
   BufferLoader,
   clone,
+  defer,
   GltfJsonLoader,
   Resource,
   ResourceCache,
-  when,
 } from "../../Source/Cesium.js";
 import generateJsonBuffer from "../generateJsonBuffer.js";
 
@@ -364,7 +364,7 @@ describe("Scene/GltfJsonLoader", function () {
   it("rejects promise if resource fails to load", function () {
     const error = new Error("404 Not Found");
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.reject(error)
+      Promise.reject(error)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -379,7 +379,7 @@ describe("Scene/GltfJsonLoader", function () {
       .then(function (gltfJsonLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load glTF: https://example.com/model.glb\n404 Not Found"
         );
@@ -390,12 +390,12 @@ describe("Scene/GltfJsonLoader", function () {
     const arrayBuffer = generateJsonBuffer(gltf1).buffer;
 
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(arrayBuffer)
+      Promise.resolve(arrayBuffer)
     );
 
     const error = new Error("404 Not Found");
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.reject(error)
+      Promise.reject(error)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -410,7 +410,7 @@ describe("Scene/GltfJsonLoader", function () {
       .then(function (gltfJsonLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load glTF: https://example.com/model.glb\nFailed to load external buffer: https://example.com/external.bin\n404 Not Found"
         );
@@ -422,7 +422,7 @@ describe("Scene/GltfJsonLoader", function () {
 
     const error = new Error("404 Not Found");
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.reject(error)
+      Promise.reject(error)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -438,7 +438,7 @@ describe("Scene/GltfJsonLoader", function () {
       .then(function (gltfJsonLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load glTF: https://example.com/model.glb\nFailed to load external buffer: https://example.com/external.bin\n404 Not Found"
         );
@@ -449,11 +449,11 @@ describe("Scene/GltfJsonLoader", function () {
     const arrayBuffer = generateJsonBuffer(gltf1).buffer;
 
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(arrayBuffer)
+      Promise.resolve(arrayBuffer)
     );
 
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(new Float32Array([0.0, 0.0, 0.0]).buffer)
+      Promise.resolve(new Float32Array([0.0, 0.0, 0.0]).buffer)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -489,7 +489,7 @@ describe("Scene/GltfJsonLoader", function () {
     const arrayBuffer = createGlb1(gltf1Binary).buffer;
 
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(arrayBuffer)
+      Promise.resolve(arrayBuffer)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -518,7 +518,7 @@ describe("Scene/GltfJsonLoader", function () {
     const arrayBuffer = generateJsonBuffer(gltf1DataUri).buffer;
 
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(arrayBuffer)
+      Promise.resolve(arrayBuffer)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -539,11 +539,11 @@ describe("Scene/GltfJsonLoader", function () {
     const arrayBuffer = generateJsonBuffer(gltf2).buffer;
 
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(arrayBuffer)
+      Promise.resolve(arrayBuffer)
     );
 
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(new Float32Array([0.0, 0.0, 0.0]).buffer)
+      Promise.resolve(new Float32Array([0.0, 0.0, 0.0]).buffer)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -570,7 +570,7 @@ describe("Scene/GltfJsonLoader", function () {
     const arrayBuffer = createGlb2(gltf2Binary).buffer;
 
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(arrayBuffer)
+      Promise.resolve(arrayBuffer)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -598,7 +598,7 @@ describe("Scene/GltfJsonLoader", function () {
     const arrayBuffer = generateJsonBuffer(gltf2DataUri).buffer;
 
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(arrayBuffer)
+      Promise.resolve(arrayBuffer)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -643,7 +643,7 @@ describe("Scene/GltfJsonLoader", function () {
     const gltf = clone(gltf2, true);
 
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(new Float32Array([0.0, 0.0, 0.0]).buffer)
+      Promise.resolve(new Float32Array([0.0, 0.0, 0.0]).buffer)
     );
 
     const gltfJsonLoader = new GltfJsonLoader({
@@ -668,7 +668,7 @@ describe("Scene/GltfJsonLoader", function () {
     const arrayBuffer = createGlb2(gltf2Binary).buffer;
 
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(arrayBuffer)
+      Promise.resolve(arrayBuffer)
     );
 
     const unloadBuffer = spyOn(
@@ -697,7 +697,7 @@ describe("Scene/GltfJsonLoader", function () {
   });
 
   function resolvesGltfAfterDestroy(reject) {
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
       deferredPromise.promise
     );
@@ -735,11 +735,11 @@ describe("Scene/GltfJsonLoader", function () {
 
   function resolvesProcessedGltfAfterDestroy(reject) {
     spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      when.resolve(generateJsonBuffer(gltf2).buffer)
+      Promise.resolve(generateJsonBuffer(gltf2).buffer)
     );
 
     const buffer = new Float32Array([0.0, 0.0, 0.0]).buffer;
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
       deferredPromise.promise
     );
@@ -773,7 +773,7 @@ describe("Scene/GltfJsonLoader", function () {
     const typedArray = generateJsonBuffer(gltf1);
 
     const buffer = new Float32Array([0.0, 0.0, 0.0]).buffer;
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
       deferredPromise.promise
     );

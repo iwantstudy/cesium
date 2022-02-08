@@ -6,7 +6,6 @@ import {
   MetadataSchema,
   Resource,
   ResourceCache,
-  when,
 } from "../../Source/Cesium.js";
 import ImplicitTilingTester from "../ImplicitTilingTester.js";
 import MetadataTester from "../MetadataTester.js";
@@ -95,7 +94,7 @@ describe("Scene/ImplicitSubtree", function () {
         typedArray: arrayBuffer,
       };
       options.resourceLoader._promise = {
-        promise: when.resolve(fakeCacheResource),
+        promise: Promise.resolve(fakeCacheResource),
       };
     };
   }
@@ -513,7 +512,7 @@ describe("Scene/ImplicitSubtree", function () {
     const fetchExternal = spyOn(
       Resource.prototype,
       "fetchArrayBuffer"
-    ).and.returnValue(when.resolve(results.externalBuffer));
+    ).and.returnValue(Promise.resolve(results.externalBuffer));
     const subtree = new ImplicitSubtree(
       subtreeResource,
       results.subtreeBuffer,
@@ -1031,7 +1030,7 @@ describe("Scene/ImplicitSubtree", function () {
 
   it("rejects ready promise on error", function () {
     const error = new Error("simulated error");
-    spyOn(when, "all").and.returnValue(when.reject(error));
+    spyOn(Promise, "all").and.returnValue(Promise.reject(error));
     const subtreeDescription = {
       tileAvailability: {
         descriptor: 1,
@@ -1065,7 +1064,7 @@ describe("Scene/ImplicitSubtree", function () {
       .then(function () {
         fail();
       })
-      .otherwise(function (error) {
+      .catch(function (error) {
         expect(error).toEqual(error);
       });
   });

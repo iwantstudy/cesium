@@ -11,7 +11,6 @@ import {
   Cartesian3,
   defined,
   HeadingPitchRange,
-  when,
   ShaderProgram,
   ModelFeature,
   Axis,
@@ -178,7 +177,7 @@ describe(
           .then(function (model) {
             fail();
           })
-          .otherwise(function (error) {
+          .catch(function (error) {
             expect(error).toBeDefined();
           });
       });
@@ -198,7 +197,7 @@ describe(
           .then(function (model) {
             fail();
           })
-          .otherwise(function (error) {
+          .catch(function (error) {
             expect(error).toBeDefined();
           });
       });
@@ -646,34 +645,32 @@ describe(
     });
 
     it("destroy doesn't destroy resources when they're in use", function () {
-      return when
-        .all([
-          loadAndZoomToModelExperimental({ gltf: boxTexturedGlbUrl }, scene),
-          loadAndZoomToModelExperimental({ gltf: boxTexturedGlbUrl }, scene),
-        ])
-        .then(function (models) {
-          const cacheEntries = ResourceCache.cacheEntries;
-          let cacheKey;
-          let cacheEntry;
+      return Promise.all([
+        loadAndZoomToModelExperimental({ gltf: boxTexturedGlbUrl }, scene),
+        loadAndZoomToModelExperimental({ gltf: boxTexturedGlbUrl }, scene),
+      ]).then(function (models) {
+        const cacheEntries = ResourceCache.cacheEntries;
+        let cacheKey;
+        let cacheEntry;
 
-          scene.primitives.remove(models[0]);
+        scene.primitives.remove(models[0]);
 
-          for (cacheKey in cacheEntries) {
-            if (cacheEntries.hasOwnProperty(cacheKey)) {
-              cacheEntry = cacheEntries[cacheKey];
-              expect(cacheEntry.referenceCount).toBeGreaterThan(0);
-            }
+        for (cacheKey in cacheEntries) {
+          if (cacheEntries.hasOwnProperty(cacheKey)) {
+            cacheEntry = cacheEntries[cacheKey];
+            expect(cacheEntry.referenceCount).toBeGreaterThan(0);
           }
+        }
 
-          scene.primitives.remove(models[1]);
+        scene.primitives.remove(models[1]);
 
-          for (cacheKey in cacheEntries) {
-            if (cacheEntries.hasOwnProperty(cacheKey)) {
-              cacheEntry = cacheEntries[cacheKey];
-              expect(cacheEntry.referenceCount).toBe(0);
-            }
+        for (cacheKey in cacheEntries) {
+          if (cacheEntries.hasOwnProperty(cacheKey)) {
+            cacheEntry = cacheEntries[cacheKey];
+            expect(cacheEntry.referenceCount).toBe(0);
           }
-        });
+        }
+      });
     });
   },
   "WebGL"

@@ -1,12 +1,12 @@
 import {
   ComponentDatatype,
+  defer,
   DracoLoader,
   GltfBufferViewLoader,
   GltfDracoLoader,
   Resource,
   ResourceCache,
   ResourceLoaderState,
-  when,
 } from "../../Source/Cesium.js";
 import createScene from "../createScene.js";
 import loaderProcess from "../loaderProcess.js";
@@ -202,7 +202,7 @@ describe("Scene/GltfDracoLoader", function () {
   it("rejects promise if buffer view fails to load", function () {
     const error = new Error("404 Not Found");
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.reject(error)
+      Promise.reject(error)
     );
 
     const dracoLoader = new GltfDracoLoader({
@@ -219,7 +219,7 @@ describe("Scene/GltfDracoLoader", function () {
       .then(function (dracoLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load Draco\nFailed to load buffer view\nFailed to load external buffer: https://example.com/external.bin\n404 Not Found"
         );
@@ -228,11 +228,13 @@ describe("Scene/GltfDracoLoader", function () {
 
   it("rejects promise if draco decoding fails", function () {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(bufferArrayBuffer)
+      Promise.resolve(bufferArrayBuffer)
     );
 
     const error = new Error("Draco decode failed");
-    spyOn(DracoLoader, "decodeBufferView").and.returnValue(when.reject(error));
+    spyOn(DracoLoader, "decodeBufferView").and.returnValue(
+      Promise.reject(error)
+    );
 
     const dracoLoader = new GltfDracoLoader({
       resourceCache: ResourceCache,
@@ -248,7 +250,7 @@ describe("Scene/GltfDracoLoader", function () {
       .then(function (dracoLoader) {
         fail();
       })
-      .otherwise(function (runtimeError) {
+      .catch(function (runtimeError) {
         expect(runtimeError.message).toBe(
           "Failed to load Draco\nDraco decode failed"
         );
@@ -257,12 +259,12 @@ describe("Scene/GltfDracoLoader", function () {
 
   it("loads draco", function () {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(bufferArrayBuffer)
+      Promise.resolve(bufferArrayBuffer)
     );
 
     // Simulate decodeBufferView not being ready for a few frames
     // Then simulate the promise not resolving for another few frames
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     const decodeBufferViewCallsTotal = 3;
     let decodeBufferViewCallsCount = 0;
     const processCallsTotal = 6;
@@ -308,11 +310,11 @@ describe("Scene/GltfDracoLoader", function () {
 
   it("destroys draco loader", function () {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(bufferArrayBuffer)
+      Promise.resolve(bufferArrayBuffer)
     );
 
     spyOn(DracoLoader, "decodeBufferView").and.returnValue(
-      when.resolve(decodeDracoResults)
+      Promise.resolve(decodeDracoResults)
     );
 
     const unloadBufferView = spyOn(
@@ -345,13 +347,13 @@ describe("Scene/GltfDracoLoader", function () {
   });
 
   function resolveBufferViewAfterDestroy(reject) {
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
       deferredPromise.promise
     );
 
     spyOn(DracoLoader, "decodeBufferView").and.returnValue(
-      when.resolve(decodeDracoResults)
+      Promise.resolve(decodeDracoResults)
     );
 
     // Load a copy of the buffer view into the cache so that the buffer view
@@ -398,10 +400,10 @@ describe("Scene/GltfDracoLoader", function () {
 
   function resolveDracoAfterDestroy(reject) {
     spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      when.resolve(bufferArrayBuffer)
+      Promise.resolve(bufferArrayBuffer)
     );
 
-    const deferredPromise = when.defer();
+    const deferredPromise = defer();
     const decodeBufferView = spyOn(
       DracoLoader,
       "decodeBufferView"

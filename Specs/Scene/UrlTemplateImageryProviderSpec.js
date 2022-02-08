@@ -1,5 +1,6 @@
 import { Ellipsoid } from "../../Source/Cesium.js";
 import { GeographicTilingScheme } from "../../Source/Cesium.js";
+import { defer } from "../../Source/Cesium.js";
 import { Math as CesiumMath } from "../../Source/Cesium.js";
 import { Rectangle } from "../../Source/Cesium.js";
 import { Request } from "../../Source/Cesium.js";
@@ -14,7 +15,6 @@ import { ImageryProvider } from "../../Source/Cesium.js";
 import { ImageryState } from "../../Source/Cesium.js";
 import { UrlTemplateImageryProvider } from "../../Source/Cesium.js";
 import pollToPromise from "../pollToPromise.js";
-import { when } from "../../Source/Cesium.js";
 
 describe("Scene/UrlTemplateImageryProvider", function () {
   beforeEach(function () {
@@ -890,7 +890,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if tileWidth called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.tileWidth();
@@ -898,7 +898,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if tileHeight called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.tileHeight();
@@ -906,7 +906,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if maximumLevel called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.maximumLevel();
@@ -914,7 +914,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if minimumLevel called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.minimumLevel();
@@ -922,7 +922,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if tilingScheme called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.tilingScheme();
@@ -930,7 +930,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if rectangle called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.rectangle();
@@ -938,7 +938,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if tileDiscardPolicy called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.tileDiscardPolicy();
@@ -946,7 +946,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if credit called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.credit();
@@ -954,7 +954,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if hasAlphaChannel called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.hasAlphaChannel();
@@ -962,7 +962,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if getTileCredits called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.getTileCredits();
@@ -970,7 +970,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if requestImage called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.requestImage();
@@ -978,7 +978,7 @@ describe("Scene/UrlTemplateImageryProvider", function () {
   });
 
   it("throws if pickFeatures called before provider is ready", function () {
-    const provider = new UrlTemplateImageryProvider(when.defer());
+    const provider = new UrlTemplateImageryProvider(defer());
 
     expect(function () {
       return provider.pickFeatures();

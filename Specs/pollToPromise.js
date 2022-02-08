@@ -1,6 +1,4 @@
-import { defaultValue } from "../Source/Cesium.js";
-import { getTimestamp } from "../Source/Cesium.js";
-import { when } from "../Source/Cesium.js";
+import { defaultValue, getTimestamp, defer } from "../Source/Cesium.js";
 
 function pollToPromise(f, options) {
   options = defaultValue(options, defaultValue.EMPTY_OBJECT);
@@ -8,7 +6,7 @@ function pollToPromise(f, options) {
   const pollInterval = defaultValue(options.pollInterval, 1);
   const timeout = defaultValue(options.timeout, 5000);
 
-  const deferred = when.defer();
+  const deferred = defer();
 
   const startTimestamp = getTimestamp();
   const endTimestamp = startTimestamp + timeout;
