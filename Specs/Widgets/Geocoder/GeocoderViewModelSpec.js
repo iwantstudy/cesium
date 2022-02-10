@@ -1,8 +1,11 @@
-import { Cartesian3 } from "../../../Source/Cesium.js";
-import { Rectangle } from "../../../Source/Cesium.js";
+import {
+  Cartesian3,
+  defer,
+  GeocoderViewModel,
+  Rectangle,
+} from "../../../Source/Cesium.js";
 import createScene from "../../createScene.js";
 import pollToPromise from "../../pollToPromise.js";
-import { GeocoderViewModel } from "../../../Source/Cesium.js";
 
 describe(
   "Widgets/Geocoder/GeocoderViewModel",
@@ -122,10 +125,16 @@ describe(
     });
 
     it("raises the complete event camera finished", function () {
+      const deferred = defer();
       const viewModel = new GeocoderViewModel({
         scene: scene,
         flightDuration: 0,
         geocoderServices: [customGeocoderOptions],
+        destinationFound: function (viewModel, destination) {
+          GeocoderViewModel.flyToDestination(viewModel, destination).then(
+            deferred.resolve
+          );
+        },
       });
 
       const spyListener = jasmine.createSpy("listener");
@@ -134,15 +143,17 @@ describe(
       viewModel.searchText = "-1.0, -2.0";
       viewModel.search();
 
-      expect(spyListener.calls.count()).toBe(1);
+      return deferred.promise.then(function () {
+        expect(spyListener.calls.count()).toBe(1);
 
-      viewModel.flightDuration = 1.5;
-      viewModel.searchText = "2.0, 2.0";
-      viewModel.search();
+        viewModel.flightDuration = 1.5;
+        viewModel.searchText = "2.0, 2.0";
+        viewModel.search();
 
-      return pollToPromise(function () {
-        scene.tweens.update();
-        return spyListener.calls.count() === 2;
+        return pollToPromise(function () {
+          scene.tweens.update();
+          return spyListener.calls.count() === 2;
+        });
       });
     });
 
@@ -161,8 +172,9 @@ describe(
         geocoderServices: [customGeocoderOptions],
       });
       geocoder._searchText = "some_text";
-      GeocoderViewModel._updateSearchSuggestions(geocoder);
-      expect(geocoder._suggestions.length).toEqual(3);
+      GeocoderViewModel._updateSearchSuggestions(geocoder).then(function () {
+        expect(geocoder._suggestions.length).toEqual(3);
+      });
     });
 
     it("update search suggestions results in empty list if the query is empty", function () {
@@ -197,18 +209,25 @@ describe(
     it("if more than one geocoder service is provided, use first result from first geocode in array order", function () {
       spyOn(GeocoderViewModel, "flyToDestination");
 
+      const deferred = defer();
       const geocoder = new GeocoderViewModel({
         scene: scene,
         geocoderServices: [noResultsGeocoder, customGeocoderOptions2],
+        destinationFound: function (viewModel, destination) {
+          deferred.resolve();
+          GeocoderViewModel.flyToDestination(viewModel, destination);
+        },
       });
       geocoder._searchText = "sthsnth"; // an empty query will prevent geocoding
 
       geocoder.search();
-      expect(geocoder._searchText).toEqual(geocoderResults2[0].displayName);
-      expect(GeocoderViewModel.flyToDestination).toHaveBeenCalledWith(
-        geocoder,
-        mockDestination
-      );
+      return deferred.promise.then(function () {
+        expect(geocoder._searchText).toEqual(geocoderResults2[0].displayName);
+        expect(GeocoderViewModel.flyToDestination).toHaveBeenCalledWith(
+          geocoder,
+          mockDestination
+        );
+      });
     });
 
     it("can update autoComplete suggestions list using multiple geocoders", function () {
@@ -217,16 +236,20 @@ describe(
         geocoderServices: [customGeocoderOptions, customGeocoderOptions2],
       });
       geocoder._searchText = "sthsnth"; // an empty query will prevent geocoding
-      GeocoderViewModel._updateSearchSuggestions(geocoder);
-      expect(geocoder._suggestions.length).toEqual(
-        geocoderResults1.length + geocoderResults2.length
-      );
+      GeocoderViewModel._updateSearchSuggestions(geocoder).then(function () {
+        expect(geocoder._suggestions.length).toEqual(
+          geocoderResults1.length + geocoderResults2.length
+        );
+      });
     });
 
     it("uses custom destination found callback", function () {
       spyOn(GeocoderViewModel, "flyToDestination");
 
-      const destinationFound = jasmine.createSpy();
+      const deferred = defer();
+      const destinationFound = jasmine.createSpy().and.callFake(function () {
+        deferred.resolve();
+      });
       const geocoder = new GeocoderViewModel({
         scene: scene,
         geocoderServices: [noResultsGeocoder, customGeocoderOptions2],
@@ -234,10 +257,14 @@ describe(
       });
       geocoder._searchText = "sthsnth"; // an empty query will prevent geocoding
       geocoder.search();
-
-      expect(geocoder._searchText).toEqual(geocoderResults2[0].displayName);
-      expect(GeocoderViewModel.flyToDestination).not.toHaveBeenCalled();
-      expect(destinationFound).toHaveBeenCalledWith(geocoder, mockDestination);
+      return deferred.promise.then(function () {
+        expect(geocoder._searchText).toEqual(geocoderResults2[0].displayName);
+        expect(GeocoderViewModel.flyToDestination).not.toHaveBeenCalled();
+        expect(destinationFound).toHaveBeenCalledWith(
+          geocoder,
+          mockDestination
+        );
+      });
     });
 
     it("automatic suggestions can be navigated by arrow up/down keys", function () {
@@ -247,21 +274,21 @@ describe(
         geocoderServices: [customGeocoderOptions],
       });
       viewModel._searchText = "some_text";
-      GeocoderViewModel._updateSearchSuggestions(viewModel);
-
-      expect(viewModel._selectedSuggestion).toEqual(undefined);
-      viewModel._handleArrowDown(viewModel);
-      expect(viewModel._selectedSuggestion.displayName).toEqual("a");
-      viewModel._handleArrowDown(viewModel);
-      viewModel._handleArrowDown(viewModel);
-      expect(viewModel._selectedSuggestion.displayName).toEqual("c");
-      viewModel._handleArrowDown(viewModel);
-      expect(viewModel._selectedSuggestion.displayName).toEqual("a");
-      viewModel._handleArrowDown(viewModel);
-      viewModel._handleArrowUp(viewModel);
-      expect(viewModel._selectedSuggestion.displayName).toEqual("a");
-      viewModel._handleArrowUp(viewModel);
-      expect(viewModel._selectedSuggestion).toBeUndefined();
+      GeocoderViewModel._updateSearchSuggestions(viewModel).then(function () {
+        expect(viewModel._selectedSuggestion).toEqual(undefined);
+        viewModel._handleArrowDown(viewModel);
+        expect(viewModel._selectedSuggestion.displayName).toEqual("a");
+        viewModel._handleArrowDown(viewModel);
+        viewModel._handleArrowDown(viewModel);
+        expect(viewModel._selectedSuggestion.displayName).toEqual("c");
+        viewModel._handleArrowDown(viewModel);
+        expect(viewModel._selectedSuggestion.displayName).toEqual("a");
+        viewModel._handleArrowDown(viewModel);
+        viewModel._handleArrowUp(viewModel);
+        expect(viewModel._selectedSuggestion.displayName).toEqual("a");
+        viewModel._handleArrowUp(viewModel);
+        expect(viewModel._selectedSuggestion).toBeUndefined();
+      });
     });
   },
   "WebGL"

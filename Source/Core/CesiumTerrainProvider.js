@@ -393,11 +393,9 @@ function CesiumTerrainProvider(options) {
         url: "layer.json",
       });
       const parentMetadata = layerJsonResource.fetchJson();
-      return Promise.resolve(
-        parentMetadata,
-        parseMetadataSuccess,
-        parseMetadataFailure
-      );
+      return Promise.resolve(parentMetadata)
+        .then(parseMetadataSuccess)
+        .catch(parseMetadataFailure);
     }
 
     return Promise.resolve();

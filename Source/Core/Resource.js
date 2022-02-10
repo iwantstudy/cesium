@@ -1883,7 +1883,11 @@ Resource.patch = function (options) {
  */
 Resource._Implementations = {};
 
-function loadImageElement(url, crossOrigin, deferred) {
+Resource._Implementations.loadImageElement = function (
+  url,
+  crossOrigin,
+  deferred
+) {
   const image = new Image();
 
   image.onload = function () {
@@ -1903,7 +1907,7 @@ function loadImageElement(url, crossOrigin, deferred) {
   }
 
   image.src = url;
-}
+};
 
 Resource._Implementations.createImage = function (
   request,
@@ -1924,7 +1928,7 @@ Resource._Implementations.createImage = function (
       // We can only use ImageBitmap if we can flip on decode.
       // See: https://github.com/CesiumGS/cesium/pull/7579#issuecomment-466146898
       if (!(supportsImageBitmap && preferImageBitmap)) {
-        loadImageElement(url, crossOrigin, deferred);
+        Resource._Implementations.loadImageElement(url, crossOrigin, deferred);
         return;
       }
       const responseType = "blob";

@@ -58,13 +58,13 @@ describe("Core/TaskProcessor", function () {
       function (canTransferArrayBuffer) {
         const promise = taskProcessor.scheduleTask(parameters, [parameters]);
 
-        if (canTransferArrayBuffer) {
-          // array buffer should be neutered when transferred
-          expect(parameters.byteLength).toEqual(0);
-        }
-
         // the worker should see the array with proper byte length
         return promise.then(function (result) {
+          if (canTransferArrayBuffer) {
+            // array buffer should be neutered when transferred
+            expect(parameters.byteLength).toEqual(0);
+          }
+
           expect(result).toEqual(byteLength);
         });
       }

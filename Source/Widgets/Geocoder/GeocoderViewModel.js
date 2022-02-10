@@ -399,7 +399,7 @@ function flyToDestination(viewModel, destination) {
     promise = computeFlyToLocationForCartographic(destination, terrainProvider);
   }
 
-  promise
+  return promise
     .then(function (result) {
       finalDestination = ellipsoid.cartographicToCartesian(result);
     })
@@ -535,7 +535,7 @@ function updateSearchSuggestions(viewModel) {
         });
     });
   });
-  promise.then(function (results) {
+  return promise.then(function (results) {
     const suggestions = viewModel._suggestions;
     for (let i = 0; i < results.length; i++) {
       suggestions.push(results[i]);

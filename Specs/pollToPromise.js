@@ -23,7 +23,9 @@ function pollToPromise(f, options) {
     if (result) {
       deferred.resolve();
     } else if (getTimestamp() > endTimestamp) {
-      deferred.reject();
+      deferred.reject(
+        new Error(`Timeout - function did not complete within ${timeout}ms`)
+      );
     } else {
       setTimeout(poller, pollInterval);
     }
