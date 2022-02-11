@@ -590,9 +590,13 @@ describe("Core/Resource", function () {
       retryAttempts: 3,
     });
 
-    const promises = [];
-    for (let i = 0; i < 6; ++i) {
-      promises.push(resource.retryOnError());
+    let promise = resource.retryOnError();
+    const promises = [promise];
+    for (let i = 1; i < 6; ++i) {
+      promise = promise.then(function (result) {
+        return resource.retryOnError();
+      });
+      promises.push(promise);
     }
 
     return Promise.all(promises).then(function (result) {
@@ -615,9 +619,13 @@ describe("Core/Resource", function () {
       retryAttempts: 4,
     });
 
-    const promises = [];
-    for (let i = 0; i < 6; ++i) {
-      promises.push(resource.retryOnError());
+    let promise = resource.retryOnError();
+    const promises = [promise];
+    for (let i = 1; i < 6; ++i) {
+      promise = promise.then(function (result) {
+        return resource.retryOnError();
+      });
+      promises.push(promise);
     }
 
     return Promise.all(promises).then(function (result) {
