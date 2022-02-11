@@ -110,6 +110,7 @@ describe("Core/Resource", function () {
     expect(promise).toBeUndefined();
 
     RequestScheduler.maximumRequests = oldMaximumRequests;
+    return promise;
   });
 
   it("appendForwardSlash appends a /", function () {
@@ -594,7 +595,7 @@ describe("Core/Resource", function () {
       promises.push(resource.retryOnError());
     }
 
-    Promise.all(promises).then(function (result) {
+    return Promise.all(promises).then(function (result) {
       expect(result).toEqual([true, true, true, false, false, false]);
       expect(cb.calls.count()).toEqual(3);
       expect(resource._retryCount).toEqual(3);
@@ -619,7 +620,7 @@ describe("Core/Resource", function () {
       promises.push(resource.retryOnError());
     }
 
-    Promise.all(promises).then(function (result) {
+    return Promise.all(promises).then(function (result) {
       expect(result).toEqual([false, true, false, true, false, false]);
       expect(cb.calls.count()).toEqual(4);
       expect(resource._retryCount).toEqual(4);
@@ -2260,11 +2261,11 @@ describe("Core/Resource", function () {
             url: "http://example.invalid",
           });
 
-          expect(promise).toBeDefined();
-
           let resolvedValue;
           let rejectedError;
-          promise
+          expect(promise).toBeDefined();
+
+          const handledPromise = promise
             .then(function (value) {
               resolvedValue = value;
             })
@@ -2276,8 +2277,11 @@ describe("Core/Resource", function () {
           expect(rejectedError).toBeUndefined();
 
           fakeXHR.simulateError();
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeInstanceOf(RequestErrorEvent);
+
+          return handledPromise.finally(function () {
+            expect(resolvedValue).toBeUndefined();
+            expect(rejectedError).toBeInstanceOf(RequestErrorEvent);
+          });
         });
 
         it("results in an HTTP status code less than 200", function () {
@@ -2289,7 +2293,7 @@ describe("Core/Resource", function () {
 
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolvedValue = value;
             })
@@ -2301,8 +2305,11 @@ describe("Core/Resource", function () {
           expect(rejectedError).toBeUndefined();
 
           fakeXHR.simulateHttpResponse(199);
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeInstanceOf(RequestErrorEvent);
+
+          return handledPromise.finally(function () {
+            expect(resolvedValue).toBeUndefined();
+            expect(rejectedError).toBeInstanceOf(RequestErrorEvent);
+          });
         });
 
         it("is an image with status code 204 with preferImageBitmap", function () {
@@ -2320,7 +2327,7 @@ describe("Core/Resource", function () {
           let resolved = false;
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolved = true;
               resolvedValue = value;
@@ -2333,9 +2340,12 @@ describe("Core/Resource", function () {
           expect(rejectedError).toBeUndefined();
 
           fakeXHR.simulateHttpResponse(204);
-          expect(resolved).toBe(false);
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeDefined();
+
+          return handledPromise.finally(function () {
+            expect(resolved).toBe(false);
+            expect(resolvedValue).toBeUndefined();
+            expect(rejectedError).toBeDefined();
+          });
         });
 
         it("resolves undefined for status code 204", function () {
@@ -2348,7 +2358,7 @@ describe("Core/Resource", function () {
           let resolved = false;
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolved = true;
               resolvedValue = value;
@@ -2361,9 +2371,12 @@ describe("Core/Resource", function () {
           expect(rejectedError).toBeUndefined();
 
           fakeXHR.simulateHttpResponse(204);
-          expect(resolved).toBe(true);
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeUndefined();
+
+          return handledPromise.finally(function () {
+            expect(resolved).toBe(true);
+            expect(resolvedValue).toBeUndefined();
+            expect(rejectedError).toBeUndefined();
+          });
         });
       });
 
@@ -2378,7 +2391,7 @@ describe("Core/Resource", function () {
 
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolvedValue = value;
             })
@@ -2394,9 +2407,13 @@ describe("Core/Resource", function () {
               .createSpy("hasChildNodes")
               .and.returnValue(true),
           };
+
           fakeXHR.simulateResponseXMLLoad(responseXML);
-          expect(resolvedValue).toEqual(responseXML);
-          expect(rejectedError).toBeUndefined();
+
+          return handledPromise.finally(function () {
+            expect(resolvedValue).toEqual(responseXML);
+            expect(rejectedError).toBeUndefined();
+          });
         });
 
         it("a null response with a document responseType and non-null responseXML with child nodes", function () {
@@ -2409,7 +2426,7 @@ describe("Core/Resource", function () {
 
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolvedValue = value;
             })
@@ -2426,8 +2443,11 @@ describe("Core/Resource", function () {
               .and.returnValue(true),
           };
           fakeXHR.simulateResponseXMLLoad(responseXML);
-          expect(resolvedValue).toEqual(responseXML);
-          expect(rejectedError).toBeUndefined();
+
+          return handledPromise.finally(function () {
+            expect(resolvedValue).toEqual(responseXML);
+            expect(rejectedError).toBeUndefined();
+          });
         });
 
         it("a null response with a '' responseType and non-null responseText", function () {
@@ -2440,7 +2460,7 @@ describe("Core/Resource", function () {
 
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolvedValue = value;
             })
@@ -2453,8 +2473,11 @@ describe("Core/Resource", function () {
 
           const responseText = "hello world";
           fakeXHR.simulateResponseTextLoad(responseText);
-          expect(resolvedValue).toEqual(responseText);
-          expect(rejectedError).toBeUndefined();
+
+          return handledPromise.finally(function () {
+            expect(resolvedValue).toEqual(responseText);
+            expect(rejectedError).toBeUndefined();
+          });
         });
 
         it("a null response with a text responseType and non-null responseText", function () {
@@ -2467,7 +2490,7 @@ describe("Core/Resource", function () {
 
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolvedValue = value;
             })
@@ -2479,9 +2502,12 @@ describe("Core/Resource", function () {
           expect(rejectedError).toBeUndefined();
 
           const responseText = "hello world";
-          fakeXHR.simulateResponseTextLoad(responseText);
-          expect(resolvedValue).toEqual(responseText);
-          expect(rejectedError).toBeUndefined();
+
+          return handledPromise.finally(function () {
+            fakeXHR.simulateResponseTextLoad(responseText);
+            expect(resolvedValue).toEqual(responseText);
+            expect(rejectedError).toBeUndefined();
+          });
         });
       });
 
@@ -2501,7 +2527,7 @@ describe("Core/Resource", function () {
 
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolvedValue = value;
             })
@@ -2513,20 +2539,25 @@ describe("Core/Resource", function () {
           expect(rejectedError).toBeUndefined();
 
           fakeXHR.simulateError(); // This should retry
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeUndefined();
+          return handledPromise
+            .finally(function () {
+              expect(resolvedValue).toBeUndefined();
+              expect(rejectedError).toBeUndefined();
 
-          expect(cb.calls.count()).toEqual(1);
-          const receivedResource = cb.calls.argsFor(0)[0];
-          expect(receivedResource.url).toEqual(resource.url);
-          expect(receivedResource._retryCount).toEqual(1);
-          expect(cb.calls.argsFor(0)[1] instanceof RequestErrorEvent).toBe(
-            true
-          );
+              expect(cb.calls.count()).toEqual(1);
+              const receivedResource = cb.calls.argsFor(0)[0];
+              expect(receivedResource.url).toEqual(resource.url);
+              expect(receivedResource._retryCount).toEqual(1);
+              expect(cb.calls.argsFor(0)[1] instanceof RequestErrorEvent).toBe(
+                true
+              );
 
-          fakeXHR.simulateError(); // This fails because we only retry once
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeInstanceOf(RequestErrorEvent);
+              fakeXHR.simulateError(); // This fails because we only retry once
+            })
+            .finally(function () {
+              expect(resolvedValue).toBeUndefined();
+              expect(rejectedError).toBeInstanceOf(RequestErrorEvent);
+            });
         });
 
         it("rejects after callback returns false", function () {
@@ -2544,28 +2575,29 @@ describe("Core/Resource", function () {
 
           let resolvedValue;
           let rejectedError;
-          promise
+          const handledPromise = promise
             .then(function (value) {
               resolvedValue = value;
             })
             .catch(function (error) {
               rejectedError = error;
             });
-
           expect(resolvedValue).toBeUndefined();
           expect(rejectedError).toBeUndefined();
 
           fakeXHR.simulateError(); // This fails because the callback returns false
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeInstanceOf(RequestErrorEvent);
+          return handledPromise.finally(function () {
+            expect(resolvedValue).toBeUndefined();
+            expect(rejectedError).toBeInstanceOf(RequestErrorEvent);
 
-          expect(cb.calls.count()).toEqual(1);
-          const receivedResource = cb.calls.argsFor(0)[0];
-          expect(receivedResource.url).toEqual(resource.url);
-          expect(receivedResource._retryCount).toEqual(1);
-          expect(cb.calls.argsFor(0)[1] instanceof RequestErrorEvent).toBe(
-            true
-          );
+            expect(cb.calls.count()).toEqual(1);
+            const receivedResource = cb.calls.argsFor(0)[0];
+            expect(receivedResource.url).toEqual(resource.url);
+            expect(receivedResource._retryCount).toEqual(1);
+            expect(cb.calls.argsFor(0)[1] instanceof RequestErrorEvent).toBe(
+              true
+            );
+          });
         });
 
         it("resolves after retry", function () {
@@ -2583,32 +2615,33 @@ describe("Core/Resource", function () {
 
           let resolvedValue;
           let rejectedError;
-          promise
+          return promise
             .then(function (value) {
               resolvedValue = value;
             })
             .catch(function (error) {
               rejectedError = error;
+            })
+            .finally(function () {
+              expect(resolvedValue).toBeUndefined();
+              expect(rejectedError).toBeUndefined();
+
+              fakeXHR.simulateError(); // This should retry
+              expect(resolvedValue).toBeUndefined();
+              expect(rejectedError).toBeUndefined();
+
+              expect(cb.calls.count()).toEqual(1);
+              const receivedResource = cb.calls.argsFor(0)[0];
+              expect(receivedResource.url).toEqual(resource.url);
+              expect(receivedResource._retryCount).toEqual(1);
+              expect(cb.calls.argsFor(0)[1] instanceof RequestErrorEvent).toBe(
+                true
+              );
+
+              fakeXHR.simulateHttpResponse(200, "OK");
+              expect(resolvedValue).toBeDefined();
+              expect(rejectedError).toBeUndefined();
             });
-
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeUndefined();
-
-          fakeXHR.simulateError(); // This should retry
-          expect(resolvedValue).toBeUndefined();
-          expect(rejectedError).toBeUndefined();
-
-          expect(cb.calls.count()).toEqual(1);
-          const receivedResource = cb.calls.argsFor(0)[0];
-          expect(receivedResource.url).toEqual(resource.url);
-          expect(receivedResource._retryCount).toEqual(1);
-          expect(cb.calls.argsFor(0)[1] instanceof RequestErrorEvent).toBe(
-            true
-          );
-
-          fakeXHR.simulateHttpResponse(200, "OK");
-          expect(resolvedValue).toBeDefined();
-          expect(rejectedError).toBeUndefined();
         });
       });
     });
