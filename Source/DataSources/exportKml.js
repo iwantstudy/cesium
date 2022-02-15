@@ -334,12 +334,15 @@ function createKmz(kmlString, externalFiles) {
   const blobWriter = new zip.BlobWriter();
   const writer = new zip.ZipWriter(blobWriter);
   // We need to only write one file at a time so the zip doesn't get corrupted
-  return Promise.resolve(writer.add("doc.kml", new zip.TextReader(kmlString)))
+  return writer
+    .add("doc.kml", new zip.TextReader(kmlString))
     .then(function () {
       const keys = Object.keys(externalFiles);
       return addExternalFilesToZip(writer, keys, externalFiles, 0);
     })
-    .then(writer.close)
+    .then(function () {
+      return writer.close();
+    })
     .then(function (blob) {
       return {
         kmz: blob,
@@ -352,11 +355,11 @@ function addExternalFilesToZip(writer, keys, externalFiles, index) {
     return;
   }
   const filename = keys[index];
-  return Promise.resolve(
-    writer.add(filename, new zip.BlobReader(externalFiles[filename]))
-  ).then(function () {
-    return addExternalFilesToZip(writer, keys, externalFiles, index + 1);
-  });
+  return writer
+    .add(filename, new zip.BlobReader(externalFiles[filename]))
+    .then(function () {
+      return addExternalFilesToZip(writer, keys, externalFiles, index + 1);
+    });
 }
 
 exportKml._createState = function (options) {

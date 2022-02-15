@@ -3939,52 +3939,14 @@ describe("DataSources/CzmlDataSource", function () {
     };
 
     const dataSource1 = new CzmlDataSource();
-    dataSource1.load(makeDocument(packet1));
-
     const dataSource2 = new CzmlDataSource();
-    const composite = new CompositeEntityCollection([
-      dataSource1.entities,
-      dataSource2.entities,
-    ]);
-
     const time = Iso8601.MINIMUM_VALUE;
-
-    // Initially we use all the properties from dataSource1.
-    let entity = composite.values[0];
-    expect(entity.properties.constant_name.getValue(time)).toEqual(
-      packet1.properties.constant_name
-    );
-    expect(entity.properties.constant_height.getValue(time)).toEqual(
-      packet1.properties.constant_height
-    );
-    expect(entity.properties.constant_object.getValue(time)).toEqual(
-      testObject1
-    );
-    expect(entity.properties.constant_array.getValue(time)).toEqual(testArray1);
-
-    // Load a new packet into dataSource2 and it should take precedence in the composite.
     const packet2 = {
       id: "test",
       properties: {
         constant_name: "DEF",
       },
     };
-
-    dataSource2.load(makeDocument(packet2));
-
-    entity = composite.values[0];
-    expect(entity.properties.constant_name.getValue(time)).toEqual(
-      packet2.properties.constant_name
-    );
-    expect(entity.properties.constant_height.getValue(time)).toEqual(
-      packet1.properties.constant_height
-    );
-    expect(entity.properties.constant_object.getValue(time)).toEqual(
-      testObject1
-    );
-    expect(entity.properties.constant_array.getValue(time)).toEqual(testArray1);
-
-    // Changed values should be mirrored in the composite, too.
     const testObject3 = {
       some: "value",
     };
@@ -4001,20 +3963,67 @@ describe("DataSources/CzmlDataSource", function () {
         },
       },
     };
+    let entity, composite;
 
-    dataSource2.process(packet3);
+    return dataSource1
+      .load(makeDocument(packet1))
+      .then(function () {
+        composite = new CompositeEntityCollection([
+          dataSource1.entities,
+          dataSource2.entities,
+        ]);
 
-    entity = composite.values[0];
-    expect(entity.properties.constant_name.getValue(time)).toEqual(
-      packet2.properties.constant_name
-    );
-    expect(entity.properties.constant_height.getValue(time)).toEqual(
-      packet3.properties.constant_height
-    );
-    expect(entity.properties.constant_object.getValue(time)).toEqual(
-      testObject3
-    );
-    expect(entity.properties.constant_array.getValue(time)).toEqual(testArray3);
+        // Initially we use all the properties from dataSource1.
+        entity = composite.values[0];
+        expect(entity.properties.constant_name.getValue(time)).toEqual(
+          packet1.properties.constant_name
+        );
+        expect(entity.properties.constant_height.getValue(time)).toEqual(
+          packet1.properties.constant_height
+        );
+        expect(entity.properties.constant_object.getValue(time)).toEqual(
+          testObject1
+        );
+        expect(entity.properties.constant_array.getValue(time)).toEqual(
+          testArray1
+        );
+
+        // Load a new packet into dataSource2 and it should take precedence in the composite.
+        return dataSource2.load(makeDocument(packet2));
+      })
+      .then(function () {
+        entity = composite.values[0];
+        expect(entity.properties.constant_name.getValue(time)).toEqual(
+          packet2.properties.constant_name
+        );
+        expect(entity.properties.constant_height.getValue(time)).toEqual(
+          packet1.properties.constant_height
+        );
+        expect(entity.properties.constant_object.getValue(time)).toEqual(
+          testObject1
+        );
+        expect(entity.properties.constant_array.getValue(time)).toEqual(
+          testArray1
+        );
+
+        // Changed values should be mirrored in the composite, too.
+        return dataSource2.process(packet3);
+      })
+      .then(function () {
+        entity = composite.values[0];
+        expect(entity.properties.constant_name.getValue(time)).toEqual(
+          packet2.properties.constant_name
+        );
+        expect(entity.properties.constant_height.getValue(time)).toEqual(
+          packet3.properties.constant_height
+        );
+        expect(entity.properties.constant_object.getValue(time)).toEqual(
+          testObject3
+        );
+        expect(entity.properties.constant_array.getValue(time)).toEqual(
+          testArray3
+        );
+      });
   });
 
   it("can load and modify availability from a single interval", function () {
