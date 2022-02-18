@@ -304,7 +304,10 @@ describe(
           url: tilesetUrl,
         });
 
-        return viewModel.tileset.readyPromise;
+        return Promise.all([
+          viewModel.tileset.readyPromise,
+          style.readyPromise,
+        ]);
       });
 
       afterAll(function () {

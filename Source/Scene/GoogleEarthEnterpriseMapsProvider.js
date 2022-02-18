@@ -321,7 +321,10 @@ function GoogleEarthEnterpriseMapsProvider(options) {
   }
 
   function metadataFailure(e) {
-    const message = `An error occurred while accessing ${metadataResource.url}.`;
+    const message = defaultValue(
+      e.message,
+      `An error occurred while accessing ${metadataResource.url}.`
+    );
     metadataError = TileProviderError.handleError(
       metadataError,
       that,
@@ -336,7 +339,14 @@ function GoogleEarthEnterpriseMapsProvider(options) {
   }
 
   function requestMetadata() {
-    metadataResource.fetchText().then(metadataSuccess).catch(metadataFailure);
+    metadataResource
+      .fetchText()
+      .then(function (text) {
+        metadataSuccess(text);
+      })
+      .catch(function (e) {
+        metadataFailure(e);
+      });
   }
 
   requestMetadata();

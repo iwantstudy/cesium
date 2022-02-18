@@ -159,6 +159,10 @@ describe("Core/GoogleEarthEnterpriseTerrainProvider", function () {
     });
     expect(terrainProvider.errorEvent).toBeDefined();
     expect(terrainProvider.errorEvent).toBe(terrainProvider.errorEvent);
+
+    return terrainProvider.readyPromise.catch(function (e) {
+      expect(terrainProvider.ready).toBe(false);
+    });
   });
 
   it("returns reasonable geometric error for various levels", function () {
@@ -177,6 +181,8 @@ describe("Core/GoogleEarthEnterpriseTerrainProvider", function () {
       terrainProvider.getLevelMaximumGeometricError(2) * 2.0,
       CesiumMath.EPSILON10
     );
+
+    return terrainProvider.readyPromise;
   });
 
   it("readyPromise rejects if there isn't terrain", function () {
@@ -196,7 +202,7 @@ describe("Core/GoogleEarthEnterpriseTerrainProvider", function () {
       .then(function () {
         fail("Server does not have terrain, so we shouldn't resolve.");
       })
-      .catch(function () {
+      .catch(function (e) {
         expect(terrainProvider.ready).toBe(false);
       });
   });

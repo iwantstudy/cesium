@@ -37,7 +37,13 @@ function customizeJasmine(
       description,
       function (done) {
         const result = f(done);
-        Promise.resolve(result).then(done).catch(done.fail);
+        Promise.resolve(result)
+          .then(function () {
+            done();
+          })
+          .catch(function (e) {
+            done.fail(e);
+          });
       },
       timeout,
       categories
@@ -49,7 +55,13 @@ function customizeJasmine(
   window.beforeEach = function (f) {
     originalBeforeEach(function (done) {
       const result = f(done);
-      Promise.resolve(result).then(done).catch(done.fail);
+      Promise.resolve(result)
+        .then(function () {
+          done();
+        })
+        .catch(function (e) {
+          done.fail(e);
+        });
     });
   };
 
@@ -58,7 +70,13 @@ function customizeJasmine(
   window.afterEach = function (f) {
     originalAfterEach(function (done) {
       const result = f(done);
-      Promise.resolve(result).then(done).catch(done.fail);
+      Promise.resolve(result)
+        .then(function () {
+          done();
+        })
+        .catch(function (e) {
+          done.fail(e);
+        });
     });
   };
 
@@ -67,7 +85,13 @@ function customizeJasmine(
   window.beforeAll = function (f) {
     originalBeforeAll(function (done) {
       const result = f(done);
-      Promise.resolve(result).then(done).catch(done.fail);
+      Promise.resolve(result)
+        .then(function () {
+          done();
+        })
+        .catch(function (e) {
+          done.fail(e);
+        });
     });
   };
 
@@ -76,7 +100,13 @@ function customizeJasmine(
   window.afterAll = function (f) {
     originalAfterAll(function (done) {
       const result = f(done);
-      Promise.resolve(result).then(done).catch(done.fail);
+      Promise.resolve(result)
+        .then(function () {
+          done();
+        })
+        .catch(function (e) {
+          done.fail(e);
+        });
     });
   };
 

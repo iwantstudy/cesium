@@ -5,7 +5,6 @@ import { defined } from "../Source/Cesium.js";
 import { Scene } from "../Source/Cesium.js";
 import createCanvas from "./createCanvas.js";
 import getWebGLStub from "./getWebGLStub.js";
-import runLater from "./runLater.js";
 
 function createScene(options) {
   options = defaultValue(options, {});
@@ -54,16 +53,10 @@ function createScene(options) {
   scene.renderForSpecs = function (time) {
     this.initializeFrame();
     this.render(time);
-
-    // Wait for the next frame
-    return runLater(function () {}, 0);
   };
 
   scene.pickForSpecs = function () {
     this.pick(new Cartesian2(0, 0));
-
-    // Wait for the next frame
-    return runLater(function () {}, 0);
   };
 
   scene.rethrowRenderErrors = defaultValue(options.rethrowRenderErrors, true);

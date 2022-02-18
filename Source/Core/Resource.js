@@ -1968,9 +1968,13 @@ Resource._Implementations.createImage = function (
             skipColorSpaceConversion: skipColorSpaceConversion,
           });
         })
-        .then(deferred.resolve);
+        .then(function (image) {
+          deferred.resolve(image);
+        });
     })
-    .catch(deferred.reject);
+    .catch(function (e) {
+      deferred.reject(e);
+    });
 };
 
 /**
@@ -2213,7 +2217,9 @@ Resource._Implementations.loadAndExecuteScript = function (
   functionName,
   deferred
 ) {
-  return loadAndExecuteScript(url, functionName).catch(deferred.reject);
+  return loadAndExecuteScript(url, functionName).catch(function (e) {
+    deferred.reject(e);
+  });
 };
 
 /**

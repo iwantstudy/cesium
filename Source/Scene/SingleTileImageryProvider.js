@@ -473,7 +473,11 @@ SingleTileImageryProvider.prototype.requestImage = function (
   }
   //>>includeEnd('debug');
 
-  return this._image;
+  if (!defined(this._image)) {
+    return;
+  }
+
+  return Promise.resolve(this._image);
 };
 
 /**

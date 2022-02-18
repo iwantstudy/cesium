@@ -1202,6 +1202,7 @@ describe(
         const statistics = tileset._statistics;
         expect(statistics.visited).toEqual(1);
         expect(statistics.numberOfCommands).toEqual(1);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -1213,6 +1214,7 @@ describe(
         const statistics = tileset._statistics;
         expect(statistics.visited).toEqual(5);
         expect(statistics.numberOfCommands).toEqual(5);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -1229,6 +1231,7 @@ describe(
         scene.renderForSpecs();
         expect(statistics.visited).toEqual(3);
         expect(statistics.numberOfCommands).toEqual(3);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -1250,6 +1253,7 @@ describe(
         setZoom(1500.0);
         scene.renderForSpecs();
         expect(statistics.numberOfCommands).toEqual(4);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -1266,6 +1270,7 @@ describe(
         const statistics = tileset._statistics;
         expect(statistics.visited).toEqual(1);
         expect(statistics.numberOfCommands).toEqual(1);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -1281,6 +1286,7 @@ describe(
         const statistics = tileset._statistics;
         expect(statistics.visited).toEqual(5); // Visits root, but does not render it
         expect(statistics.numberOfCommands).toEqual(4);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -1303,6 +1309,7 @@ describe(
         expect(statistics.numberOfCommands).toEqual(1);
         expect(statistics.numberOfPendingRequests).toEqual(4);
         expect(numberOfChildrenWithoutContent(root)).toEqual(4);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -1332,6 +1339,7 @@ describe(
         scene.renderForSpecs();
         expect(statistics.numberOfCommands).toEqual(4);
         expect(isSelected(tileset, root)).toBe(true); // one child is no longer selected. root is chosen instead
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -1354,6 +1362,7 @@ describe(
         expect(statistics.selected).toEqual(1);
         expect(statistics.visited).toEqual(3);
         expect(isSelected(tileset, tileset.root)).toBe(true);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -2258,6 +2267,7 @@ describe(
         expect(tileset._statistics.numberOfPendingRequests).toEqual(0);
         scene.renderForSpecs();
         expect(tileset._statistics.numberOfPendingRequests).toEqual(1);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -2276,6 +2286,7 @@ describe(
           expect(spy).not.toHaveBeenCalled();
           scene.renderForSpecs();
           expect(spy).toHaveBeenCalled();
+          return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
         });
       });
     });
@@ -2297,6 +2308,7 @@ describe(
         expect(tileset._statistics.numberOfAttemptedRequests).toEqual(1);
 
         RequestScheduler.maximumRequestsPerServer = oldMaximumRequestsPerServer;
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -2377,6 +2389,7 @@ describe(
         ).not.toEqual(CullingVolume.MASK_OUTSIDE);
         expect(spyUpdate.calls.count()).toEqual(1);
         expect(spyUpdate.calls.argsFor(0)[0]).toBe(tileset.root);
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -2416,35 +2429,35 @@ describe(
 
     it("tile failed event is raised", function () {
       viewNothing();
-      return Cesium3DTilesTester.loadTileset(scene, tilesetUrl).then(function (
-        tileset
-      ) {
-        spyOn(Resource._Implementations, "loadWithXhr").and.callFake(function (
-          url,
-          responseType,
-          method,
-          data,
-          headers,
-          deferred,
-          overrideMimeType
-        ) {
-          deferred.reject("404");
-        });
-        const spyUpdate = jasmine.createSpy("listener");
-        tileset.tileFailed.addEventListener(spyUpdate);
-        tileset.maximumMemoryUsage = 0;
-        viewRootOnly();
-        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset).then(
-          function () {
-            expect(spyUpdate.calls.count()).toEqual(1);
+      const spyUpdate = jasmine.createSpy("listener");
+      return Cesium3DTilesTester.loadTileset(scene, tilesetUrl)
+        .then(function (tileset) {
+          spyOn(Resource._Implementations, "loadWithXhr").and.callFake(
+            function (
+              url,
+              responseType,
+              method,
+              data,
+              headers,
+              deferred,
+              overrideMimeType
+            ) {
+              deferred.reject("404");
+            }
+          );
+          tileset.tileFailed.addEventListener(spyUpdate);
+          tileset.maximumMemoryUsage = 0;
+          viewRootOnly();
+          return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
+        })
+        .finally(function () {
+          expect(spyUpdate.calls.count()).toEqual(1);
 
-            const arg = spyUpdate.calls.argsFor(0)[0];
-            expect(arg).toBeDefined();
-            expect(arg.url).toContain("parent.b3dm");
-            expect(arg.message).toBeDefined();
-          }
-        );
-      });
+          const arg = spyUpdate.calls.argsFor(0)[0];
+          expect(arg).toBeDefined();
+          expect(arg.url).toContain("parent.b3dm");
+          expect(arg.message).toBeDefined();
+        });
     });
 
     it("destroys", function () {

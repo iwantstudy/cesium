@@ -265,41 +265,54 @@ describe(
     });
 
     it("renders model with style", function () {
-      return loadAndZoomToModelExperimental(
-        { gltf: buildingsMetadata },
-        scene
-      ).then(function (model) {
-        // Renders without style.
-        verifyRender(model, true);
+      let model;
+      let style;
+      return loadAndZoomToModelExperimental({ gltf: buildingsMetadata }, scene)
+        .then(function (result) {
+          model = result;
+          // Renders without style.
+          verifyRender(model, true);
 
-        // Renders with opaque style.
-        model.style = new Cesium3DTileStyle({
-          color: {
-            conditions: [["${height} > 1", "color('red')"]],
-          },
+          // Renders with opaque style.
+          style = new Cesium3DTileStyle({
+            color: {
+              conditions: [["${height} > 1", "color('red')"]],
+            },
+          });
+          return style.readyPromise;
+        })
+        .then(function () {
+          model.style = style;
+          verifyRender(model, true);
+
+          // Renders with translucent style.
+          style = new Cesium3DTileStyle({
+            color: {
+              conditions: [["${height} > 1", "color('red', 0.5)"]],
+            },
+          });
+          return style.readyPromise;
+        })
+        .then(function () {
+          model.style = style;
+          verifyRender(model, true);
+
+          // Does not render when style disables show.
+          style = new Cesium3DTileStyle({
+            color: {
+              conditions: [["${height} > 1", "color('red', 0.0)"]],
+            },
+          });
+          return style.readyPromise;
+        })
+        .then(function () {
+          model.style = style;
+          verifyRender(model, false);
+
+          // Render when style is removed.
+          model.style = undefined;
+          verifyRender(model, true);
         });
-        verifyRender(model, true);
-
-        // Renders with translucent style.
-        model.style = new Cesium3DTileStyle({
-          color: {
-            conditions: [["${height} > 1", "color('red', 0.5)"]],
-          },
-        });
-        verifyRender(model, true);
-
-        // Does not render when style disables show.
-        model.style = new Cesium3DTileStyle({
-          color: {
-            conditions: [["${height} > 1", "color('red', 0.0)"]],
-          },
-        });
-        verifyRender(model, false);
-
-        // Render when style is removed.
-        model.style = undefined;
-        verifyRender(model, true);
-      });
     });
 
     it("fromGltf throws with undefined options", function () {

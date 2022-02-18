@@ -1685,9 +1685,18 @@ describe("Core/Resource", function () {
 
     it("sets the crossOrigin property for cross-origin images", function () {
       const fakeImage = {};
-      const imageConstructorSpy = spyOn(window, "Image").and.returnValue(
-        fakeImage
+      const deferred = defer();
+      const imageConstructorSpy = spyOn(window, "Image").and.callFake(
+        function () {
+          deferred.resolve();
+          return fakeImage;
+        }
       );
+
+      // mock image loading so that the promise resolves
+      deferred.promise.then(function () {
+        fakeImage.onload();
+      });
 
       return Resource.fetchImage("http://example.invalid/someImage.png").then(
         function () {
@@ -1699,9 +1708,18 @@ describe("Core/Resource", function () {
 
     it("does not set the crossOrigin property for non-cross-origin images", function () {
       const fakeImage = {};
-      const imageConstructorSpy = spyOn(window, "Image").and.returnValue(
-        fakeImage
+      const deferred = defer();
+      const imageConstructorSpy = spyOn(window, "Image").and.callFake(
+        function () {
+          deferred.resolve();
+          return fakeImage;
+        }
       );
+
+      // mock image loading so that the promise resolves
+      deferred.promise.then(function () {
+        fakeImage.onload();
+      });
 
       return Resource.fetchImage("./someImage.png").then(function () {
         expect(imageConstructorSpy).toHaveBeenCalled();
@@ -1711,9 +1729,18 @@ describe("Core/Resource", function () {
 
     it("does not set the crossOrigin property for data URIs", function () {
       const fakeImage = {};
-      const imageConstructorSpy = spyOn(window, "Image").and.returnValue(
-        fakeImage
+      const deferred = defer();
+      const imageConstructorSpy = spyOn(window, "Image").and.callFake(
+        function () {
+          deferred.resolve();
+          return fakeImage;
+        }
       );
+
+      // mock image loading so that the promise resolves
+      deferred.promise.then(function () {
+        fakeImage.onload();
+      });
 
       return Resource.fetchImage(dataUri).then(function () {
         expect(imageConstructorSpy).toHaveBeenCalled();
@@ -1722,16 +1749,24 @@ describe("Core/Resource", function () {
     });
 
     it("resolves the promise when the image loads", function () {
-      const fakeImage = {
-        onload: function () {
-          return Promise.resolve();
-        },
-      };
-      spyOn(window, "Image").and.returnValue(fakeImage);
+      const fakeImage = {};
+      const deferred = defer();
+      spyOn(window, "Image").and.callFake(function () {
+        deferred.resolve();
+        return fakeImage;
+      });
 
       let success = false;
       let failure = false;
       let loadedImage;
+
+      deferred.promise.then(function () {
+        // neither callback has fired yet
+        expect(success).toEqual(false);
+        expect(failure).toEqual(false);
+
+        fakeImage.onload();
+      });
 
       const promise = Promise.resolve(Resource.fetchImage(dataUri))
         .then(function (image) {
@@ -1741,12 +1776,6 @@ describe("Core/Resource", function () {
         .catch(function () {
           failure = true;
         });
-
-      // neither callback has fired yet
-      expect(success).toEqual(false);
-      expect(failure).toEqual(false);
-
-      fakeImage.onload();
 
       return promise.finally(function () {
         expect(success).toEqual(true);
@@ -1758,24 +1787,14 @@ describe("Core/Resource", function () {
     it("rejects the promise when the image errors", function () {
       const deferred = defer();
       const fakeImage = {};
-      spyOn(window, "Image").and.returnValue(fakeImage);
-
-      spyOn(Resource._Implementations, "loadImageElement")
-        .and.callThrough()
-        .and.callFake(deferred.resolve);
+      spyOn(window, "Image").and.callFake(function () {
+        deferred.resolve();
+        return fakeImage;
+      });
 
       let success = false;
       let failure = false;
       let loadedImage;
-
-      const promise = Promise.resolve(Resource.fetchImage(dataUri))
-        .then(function (image) {
-          success = true;
-          loadedImage = image;
-        })
-        .catch(function () {
-          failure = true;
-        });
 
       deferred.promise.then(function () {
         // neither callback has fired yet
@@ -1785,11 +1804,19 @@ describe("Core/Resource", function () {
         fakeImage.onerror(new Error());
       });
 
-      return promise.finally(function () {
-        expect(success).toEqual(false);
-        expect(failure).toEqual(true);
-        expect(loadedImage).toBeUndefined();
-      });
+      return Resource.fetchImage(dataUri)
+        .then(function (image) {
+          success = true;
+          loadedImage = image;
+        })
+        .catch(function () {
+          failure = true;
+        })
+        .finally(function () {
+          expect(success).toEqual(false);
+          expect(failure).toEqual(true);
+          expect(loadedImage).toBeUndefined();
+        });
     });
 
     it("Calls loadWithXhr with blob response type if headers is set", function () {
@@ -1862,10 +1889,13 @@ describe("Core/Resource", function () {
 
     describe("retries when Resource has the callback set", function () {
       it("rejects after too many retries", function () {
-        const fakeImage = {
-          onerror: function () {},
-        };
-        spyOn(window, "Image").and.returnValue(fakeImage);
+        let deferred = defer();
+        let fakeImage = {};
+        spyOn(window, "Image").and.callFake(function () {
+          deferred.resolve();
+          fakeImage = {};
+          return fakeImage;
+        });
 
         const cb = jasmine.createSpy("retry").and.returnValue(true);
 
@@ -1875,48 +1905,47 @@ describe("Core/Resource", function () {
           retryAttempts: 1,
         });
 
-        const promise = resource.fetchImage();
+        deferred.promise
+          .then(function () {
+            fakeImage.onerror("some error"); // This should retry
 
-        expect(promise).toBeDefined();
+            deferred = defer();
+            return deferred.promise;
+          })
+          .then(function () {
+            fakeImage.onerror(); // This fails because we only retry once
+          });
 
         let success = false;
         let failure = false;
-        promise
+        return resource
+          .fetchImage()
           .then(function () {
             success = true;
           })
           .catch(function () {
             failure = true;
+          })
+          .finally(function () {
+            expect(cb.calls.count()).toEqual(1);
+            const receivedResource = cb.calls.argsFor(0)[0];
+            expect(receivedResource.url).toEqual(resource.url);
+            expect(receivedResource._retryCount).toEqual(1);
+            expect(cb.calls.argsFor(0)[1]).toEqual("some error");
+
+            expect(success).toBe(false);
+            expect(failure).toBe(true);
           });
-
-        expect(success).toBe(false);
-        expect(failure).toBe(false);
-
-        fakeImage.onerror("some error"); // This should retry
-        expect(success).toBe(false);
-        expect(failure).toBe(false);
-
-        fakeImage.onerror(); // This fails because we only retry once
-
-        return promise.finally(function () {
-          expect(cb.calls.count()).toEqual(1);
-          const receivedResource = cb.calls.argsFor(0)[0];
-          expect(receivedResource.url).toEqual(resource.url);
-          expect(receivedResource._retryCount).toEqual(1);
-          expect(cb.calls.argsFor(0)[1]).toEqual("some error");
-
-          expect(success).toBe(false);
-          expect(failure).toBe(true);
-        });
       });
 
       it("rejects after callback returns false", function () {
-        const fakeImage = {
-          onerror: function () {
-            return Promise.reject();
-          },
-        };
-        spyOn(window, "Image").and.returnValue(fakeImage);
+        const deferred = defer();
+        let fakeImage = {};
+        spyOn(window, "Image").and.callFake(function () {
+          deferred.resolve();
+          fakeImage = {};
+          return fakeImage;
+        });
 
         const cb = jasmine.createSpy("retry").and.returnValue(false);
 
@@ -1926,46 +1955,40 @@ describe("Core/Resource", function () {
           retryAttempts: 2,
         });
 
-        const promise = resource.fetchImage();
-
-        expect(promise).toBeDefined();
+        deferred.promise.then(function () {
+          fakeImage.onerror("some error"); // This fails because the callback returns false
+        });
 
         let success = false;
         let failure = false;
-        promise
+        return resource
+          .fetchImage()
           .then(function (value) {
             success = true;
           })
           .catch(function (error) {
             failure = true;
+          })
+          .finally(function () {
+            expect(success).toBe(false);
+            expect(failure).toBe(true);
+
+            expect(cb.calls.count()).toEqual(1);
+            const receivedResource = cb.calls.argsFor(0)[0];
+            expect(receivedResource.url).toEqual(resource.url);
+            expect(receivedResource._retryCount).toEqual(1);
+            expect(cb.calls.argsFor(0)[1]).toEqual("some error");
           });
-
-        expect(success).toBe(false);
-        expect(failure).toBe(false);
-
-        fakeImage.onerror("some error"); // This fails because the callback returns false
-        return promise.finally(function () {
-          expect(success).toBe(false);
-          expect(failure).toBe(true);
-
-          expect(cb.calls.count()).toEqual(1);
-          const receivedResource = cb.calls.argsFor(0)[0];
-          expect(receivedResource.url).toEqual(resource.url);
-          expect(receivedResource._retryCount).toEqual(1);
-          expect(cb.calls.argsFor(0)[1]).toEqual("some error");
-        });
       });
 
       it("resolves after retry", function () {
-        const fakeImage = {
-          onerror: function () {
-            return Promise.reject();
-          },
-          onload: function () {
-            return Promise.resolve();
-          },
-        };
-        spyOn(window, "Image").and.returnValue(fakeImage);
+        let deferred = defer();
+        let fakeImage = {};
+        spyOn(window, "Image").and.callFake(function () {
+          deferred.resolve();
+          fakeImage = {};
+          return fakeImage;
+        });
 
         const cb = jasmine.createSpy("retry").and.returnValue(true);
 
@@ -1975,35 +1998,38 @@ describe("Core/Resource", function () {
           retryAttempts: 1,
         });
 
-        const promise = resource.fetchImage();
+        deferred.promise
+          .then(function () {
+            fakeImage.onerror("some error"); // This should retry
 
-        expect(promise).toBeDefined();
+            deferred = defer();
+            return deferred.promise;
+          })
+          .then(function () {
+            fakeImage.onload(); // This succeeds
+          });
 
         let success = false;
         let failure = false;
-        promise
+        return resource
+          .fetchImage()
           .then(function (value) {
             success = true;
           })
           .catch(function (error) {
             failure = true;
+          })
+          .finally(function () {
+            expect(cb.calls.count()).toEqual(1);
+            const receivedResource = cb.calls.argsFor(0)[0];
+            expect(receivedResource.url).toEqual(resource.url);
+            expect(receivedResource._retryCount).toEqual(1);
+            expect(cb.calls.argsFor(0)[1]).toEqual("some error");
+
+            fakeImage.onload();
+            expect(success).toBe(true);
+            expect(failure).toBe(false);
           });
-
-        expect(success).toBe(false);
-        expect(failure).toBe(false);
-
-        fakeImage.onerror("some error"); // This should retry
-        return promise.finally(function () {
-          expect(cb.calls.count()).toEqual(1);
-          const receivedResource = cb.calls.argsFor(0)[0];
-          expect(receivedResource.url).toEqual(resource.url);
-          expect(receivedResource._retryCount).toEqual(1);
-          expect(cb.calls.argsFor(0)[1]).toEqual("some error");
-
-          fakeImage.onload();
-          expect(success).toBe(true);
-          expect(failure).toBe(false);
-        });
       });
     });
   });
@@ -2510,9 +2536,9 @@ describe("Core/Resource", function () {
           expect(rejectedError).toBeUndefined();
 
           const responseText = "hello world";
+          fakeXHR.simulateResponseTextLoad(responseText);
 
           return handledPromise.finally(function () {
-            fakeXHR.simulateResponseTextLoad(responseText);
             expect(resolvedValue).toEqual(responseText);
             expect(rejectedError).toBeUndefined();
           });
@@ -2659,10 +2685,10 @@ describe("Core/Resource", function () {
     it("returns a promise that resolves when the request loads", function () {
       const testUrl = "http://example.invalid/testuri";
       spyOn(Resource._Implementations, "loadAndExecuteScript").and.callFake(
-        function (url, name, deffered) {
+        function (url, name, deferred) {
           expect(url).toContain(testUrl);
           expect(name).toContain("loadJsonp");
-          expect(deffered).toBeDefined();
+          expect(deferred).toBeDefined();
         }
       );
       Resource.fetchJsonp(testUrl);
