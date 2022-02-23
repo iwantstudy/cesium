@@ -362,10 +362,10 @@ describe("Scene/GltfJsonLoader", function () {
   });
 
   it("rejects promise if resource fails to load", function () {
-    const error = new Error("404 Not Found");
-    spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      Promise.reject(error)
-    );
+    spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.callFake(function () {
+      const error = new Error("404 Not Found");
+      return Promise.reject(error);
+    });
 
     const gltfJsonLoader = new GltfJsonLoader({
       resourceCache: ResourceCache,
@@ -393,10 +393,10 @@ describe("Scene/GltfJsonLoader", function () {
       Promise.resolve(arrayBuffer)
     );
 
-    const error = new Error("404 Not Found");
-    spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      Promise.reject(error)
-    );
+    spyOn(Resource.prototype, "fetchArrayBuffer").and.callFake(function () {
+      const error = new Error("404 Not Found");
+      return Promise.reject(error);
+    });
 
     const gltfJsonLoader = new GltfJsonLoader({
       resourceCache: ResourceCache,
@@ -420,10 +420,10 @@ describe("Scene/GltfJsonLoader", function () {
   it("rejects promise if glTF fails to process from typed array", function () {
     const typedArray = createGlb1(gltf1);
 
-    const error = new Error("404 Not Found");
-    spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      Promise.reject(error)
-    );
+    spyOn(Resource.prototype, "fetchArrayBuffer").and.callFake(function () {
+      const error = new Error("404 Not Found");
+      return Promise.reject(error);
+    });
 
     const gltfJsonLoader = new GltfJsonLoader({
       resourceCache: ResourceCache,
@@ -696,13 +696,23 @@ describe("Scene/GltfJsonLoader", function () {
     });
   });
 
-  function resolvesGltfAfterDestroy(reject) {
-    const deferredPromise = defer();
-    spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
-      deferredPromise.promise
-    );
-
+  function resolvesGltfAfterDestroy(rejectPromise) {
     const arrayBuffer = generateJsonBuffer(gltf2).buffer;
+    let promise = new Promise(function (resolve, reject) {
+      if (rejectPromise) {
+        reject(new Error());
+        return;
+      }
+
+      resolve(arrayBuffer);
+    });
+    if (rejectPromise) {
+      promise = promise.catch(function (e) {
+        // swallow that error we just threw
+      });
+    }
+
+    spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(promise);
 
     const gltfJsonLoader = new GltfJsonLoader({
       resourceCache: ResourceCache,
@@ -713,24 +723,20 @@ describe("Scene/GltfJsonLoader", function () {
     expect(gltfJsonLoader.gltf).not.toBeDefined();
 
     gltfJsonLoader.load();
-    gltfJsonLoader.destroy();
+    return promise.then(function () {
+      gltfJsonLoader.destroy();
 
-    if (reject) {
-      deferredPromise.reject(new Error());
-    } else {
-      deferredPromise.resolve(arrayBuffer);
-    }
-
-    expect(gltfJsonLoader.gltf).not.toBeDefined();
-    expect(gltfJsonLoader.isDestroyed()).toBe(true);
+      expect(gltfJsonLoader.gltf).not.toBeDefined();
+      expect(gltfJsonLoader.isDestroyed()).toBe(true);
+    });
   }
 
   it("handles resolving glTF after destroy", function () {
-    resolvesGltfAfterDestroy(false);
+    return resolvesGltfAfterDestroy(false);
   });
 
   it("handles rejecting glTF after destroy", function () {
-    resolvesGltfAfterDestroy(true);
+    return resolvesGltfAfterDestroy(true);
   });
 
   function resolvesProcessedGltfAfterDestroy(reject) {
@@ -769,14 +775,24 @@ describe("Scene/GltfJsonLoader", function () {
     resolvesProcessedGltfAfterDestroy(true);
   });
 
-  function resolvesTypedArrayAfterDestroy(reject) {
+  function resolvesTypedArrayAfterDestroy(rejectPromise) {
     const typedArray = generateJsonBuffer(gltf1);
 
     const buffer = new Float32Array([0.0, 0.0, 0.0]).buffer;
-    const deferredPromise = defer();
-    spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      deferredPromise.promise
-    );
+    let promise = new Promise(function (resolve, reject) {
+      if (rejectPromise) {
+        reject(new Error());
+        return;
+      }
+
+      resolve(buffer);
+    });
+    if (rejectPromise) {
+      promise = promise.catch(function (e) {
+        // swallow that error we just threw
+      });
+    }
+    spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(promise);
 
     // Load a copy of the buffer into the cache so that the buffer loader
     // promise resolves even if the glTF loader is destroyed
@@ -794,18 +810,14 @@ describe("Scene/GltfJsonLoader", function () {
     expect(gltfJsonLoader.gltf).not.toBeDefined();
 
     gltfJsonLoader.load();
-    gltfJsonLoader.destroy();
+    return promise.then(function () {
+      gltfJsonLoader.destroy();
 
-    if (reject) {
-      deferredPromise.reject(new Error());
-    } else {
-      deferredPromise.resolve(buffer);
-    }
+      expect(gltfJsonLoader.gltf).not.toBeDefined();
+      expect(gltfJsonLoader.isDestroyed()).toBe(true);
 
-    expect(gltfJsonLoader.gltf).not.toBeDefined();
-    expect(gltfJsonLoader.isDestroyed()).toBe(true);
-
-    ResourceCache.unload(bufferLoaderCopy);
+      ResourceCache.unload(bufferLoaderCopy);
+    });
   }
 
   it("handles resolving typed array after destroy", function () {

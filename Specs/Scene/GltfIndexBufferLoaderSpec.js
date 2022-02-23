@@ -331,10 +331,10 @@ describe(
     });
 
     it("rejects promise if buffer view fails to load", function () {
-      const error = new Error("404 Not Found");
-      spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        Promise.reject(error)
-      );
+      spyOn(Resource.prototype, "fetchArrayBuffer").and.callFake(function () {
+        const error = new Error("404 Not Found");
+        return Promise.reject(error);
+      });
 
       const indexBufferLoader = new GltfIndexBufferLoader({
         resourceCache: ResourceCache,
@@ -362,10 +362,10 @@ describe(
         Promise.resolve(dracoArrayBuffer)
       );
 
-      const error = new Error("Draco decode failed");
-      spyOn(DracoLoader, "decodeBufferView").and.returnValue(
-        Promise.reject(error)
-      );
+      spyOn(DracoLoader, "decodeBufferView").and.callFake(function () {
+        const error = new Error("Draco decode failed");
+        return Promise.reject(error);
+      });
 
       const indexBufferLoader = new GltfIndexBufferLoader({
         resourceCache: ResourceCache,
@@ -722,18 +722,10 @@ describe(
       resolveBufferViewAfterDestroy(true);
     });
 
-    function resolveDracoAfterDestroy(reject) {
+    function resolveDracoAfterDestroy(rejectPromise) {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
         Promise.resolve(arrayBuffer)
       );
-
-      const deferredPromise = defer();
-      const decodeBufferView = spyOn(
-        DracoLoader,
-        "decodeBufferView"
-      ).and.callFake(function () {
-        return deferredPromise.promise;
-      });
 
       // Load a copy of the draco loader into the cache so that the draco loader
       // promise resolves even if the index buffer loader is destroyed
@@ -753,32 +745,51 @@ describe(
         draco: dracoExtension,
       });
 
+      let promise = new Promise(function (resolve, reject) {
+        setTimeout(function () {
+          loaderProcess(indexBufferLoader, scene);
+          if (rejectPromise) {
+            reject(new Error());
+          } else {
+            resolve(decodeDracoResults);
+          }
+        }, 1);
+      });
+      if (rejectPromise) {
+        promise = promise.catch(function (e) {
+          // swallow that error we just threw
+        });
+      }
+
+      const decodeBufferView = spyOn(
+        DracoLoader,
+        "decodeBufferView"
+      ).and.callFake(function () {
+        return promise;
+      });
+
       expect(indexBufferLoader.buffer).not.toBeDefined();
 
       indexBufferLoader.load();
       loaderProcess(indexBufferLoader, scene);
-      expect(decodeBufferView).toHaveBeenCalled(); // Make sure the decode actually starts
+      return promise.finally(function () {
+        expect(decodeBufferView).toHaveBeenCalled(); // Make sure the decode actually starts
 
-      indexBufferLoader.destroy();
+        indexBufferLoader.destroy();
 
-      if (reject) {
-        deferredPromise.reject(new Error());
-      } else {
-        deferredPromise.resolve(decodeDracoResults);
-      }
+        expect(indexBufferLoader.buffer).not.toBeDefined();
+        expect(indexBufferLoader.isDestroyed()).toBe(true);
 
-      expect(indexBufferLoader.buffer).not.toBeDefined();
-      expect(indexBufferLoader.isDestroyed()).toBe(true);
-
-      ResourceCache.unload(dracoLoaderCopy);
+        ResourceCache.unload(dracoLoaderCopy);
+      });
     }
 
     it("handles resolving draco after destroy", function () {
-      resolveDracoAfterDestroy(false);
+      return resolveDracoAfterDestroy(false);
     });
 
     it("handles rejecting draco after destroy", function () {
-      resolveDracoAfterDestroy(true);
+      return resolveDracoAfterDestroy(true);
     });
   },
   "WebGL"
