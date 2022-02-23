@@ -1,8 +1,11 @@
 import createTileKey from "./createTileKey.js";
 import runLater from "./runLater.js";
-import { GeographicTilingScheme } from "../Source/Cesium.js";
-import { Resource } from "../Source/Cesium.js";
-import { RuntimeError } from "../Source/Cesium.js";
+import {
+  Event,
+  GeographicTilingScheme,
+  Resource,
+  RuntimeError,
+} from "../Source/Cesium.js";
 
 function MockImageryProvider() {
   this.tilingScheme = new GeographicTilingScheme();
@@ -10,6 +13,7 @@ function MockImageryProvider() {
   this.rectangle = this.tilingScheme.rectangle;
   this.tileWidth = 256;
   this.tileHeight = 256;
+  this.errorEvent = new Event();
   this._requestImageWillSucceed = {};
 
   const that = this;

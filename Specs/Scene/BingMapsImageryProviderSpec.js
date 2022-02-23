@@ -665,11 +665,11 @@ describe("Scene/BingMapsImageryProvider", function () {
     const layer = new ImageryLayer(provider);
 
     // Fake ImageryProvider.loadImage's expected output in the case of an empty tile
-    const e = new Error();
-    e.blob = { size: 0 };
-    const errorPromise = Promise.reject(e);
-
-    spyOn(ImageryProvider, "loadImage").and.returnValue(errorPromise);
+    spyOn(ImageryProvider, "loadImage").and.callFake(function () {
+      const e = new Error();
+      e.blob = { size: 0 };
+      return Promise.reject(e);
+    });
 
     return pollToPromise(function () {
       return provider.ready;

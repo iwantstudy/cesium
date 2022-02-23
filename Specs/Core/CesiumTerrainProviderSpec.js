@@ -206,16 +206,15 @@ describe("Core/CesiumTerrainProvider", function () {
   });
 
   it("rejects readyPromise when url rejects", function () {
-    const error = new Error();
     const provider = new CesiumTerrainProvider({
-      url: Promise.reject(error),
+      url: Promise.reject(new Error("my message")),
     });
     return provider.readyPromise
       .then(function () {
         fail("should not resolve");
       })
       .catch(function (result) {
-        expect(result).toBe(error);
+        expect(result.message).toBe("my message");
         expect(provider.ready).toBe(false);
       });
   });

@@ -289,7 +289,9 @@ describe("Scene/IonImageryProvider", function () {
       options: options,
       attributions: [],
     });
-    expect(provider._imageryProvider).toBeInstanceOf(ImageryClass);
+    return provider.readyPromise.then(function () {
+      expect(provider._imageryProvider).toBeInstanceOf(ImageryClass);
+    });
   }
 
   it("createImageryProvider works with ARCGIS_MAPSERVER", function () {

@@ -34,9 +34,9 @@ describe("Scene/BufferLoader", function () {
 
   it("rejects promise if buffer cannot be fetched", function () {
     const error = new Error("404 Not Found");
-    spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      Promise.reject(error)
-    );
+    spyOn(Resource.prototype, "fetchArrayBuffer").and.callFake(function () {
+      return Promise.reject(error);
+    });
 
     const bufferLoader = new BufferLoader({
       resource: resource,

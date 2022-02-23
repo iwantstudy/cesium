@@ -172,9 +172,9 @@ describe("Scene/GltfBufferViewLoader", function () {
 
   it("rejects promise if buffer fails to load", function () {
     const error = new Error("404 Not Found");
-    spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-      Promise.reject(error)
-    );
+    spyOn(Resource.prototype, "fetchArrayBuffer").and.callFake(function () {
+      return Promise.reject(error);
+    });
 
     const bufferViewLoader = new GltfBufferViewLoader({
       resourceCache: ResourceCache,
@@ -272,7 +272,7 @@ describe("Scene/GltfBufferViewLoader", function () {
   });
 
   it("decodes positions with EXT_meshopt_compression", function () {
-    ResourceCache.loadEmbeddedBuffer({
+    const bufferLoader = ResourceCache.loadEmbeddedBuffer({
       parentResource: gltfResource,
       bufferId: 0,
       typedArray: meshoptPositionTypedArray,
@@ -287,14 +287,17 @@ describe("Scene/GltfBufferViewLoader", function () {
     });
 
     bufferViewLoader.load();
-    bufferViewLoader.process({});
-
-    return bufferViewLoader.promise.then(function (bufferViewLoader) {
-      const decodedPositionBase64 = getBase64FromTypedArray(
-        bufferViewLoader.typedArray
-      );
-      expect(decodedPositionBase64).toEqual(fallbackPositionBufferBase64);
-    });
+    return bufferLoader.promise
+      .then(function () {
+        bufferViewLoader.process({});
+        return bufferViewLoader.promise;
+      })
+      .then(function (bufferViewLoader) {
+        const decodedPositionBase64 = getBase64FromTypedArray(
+          bufferViewLoader.typedArray
+        );
+        expect(decodedPositionBase64).toEqual(fallbackPositionBufferBase64);
+      });
   });
 
   function resolveAfterDestroy(reject) {

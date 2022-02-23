@@ -1,10 +1,13 @@
 import createTileKey from "./createTileKey.js";
 import runLater from "./runLater.js";
-import { defer, defined } from "../Source/Cesium.js";
-import { GeographicTilingScheme } from "../Source/Cesium.js";
-import { HeightmapTerrainData } from "../Source/Cesium.js";
-import { RuntimeError } from "../Source/Cesium.js";
-import { TerrainProvider } from "../Source/Cesium.js";
+import {
+  defined,
+  Event,
+  GeographicTilingScheme,
+  HeightmapTerrainData,
+  RuntimeError,
+  TerrainProvider,
+} from "../Source/Cesium.js";
 
 function MockTerrainProvider() {
   this.tilingScheme = new GeographicTilingScheme();
@@ -15,8 +18,9 @@ function MockTerrainProvider() {
     this.tilingScheme.getNumberOfXTilesAtLevel(0)
   );
   this.ready = true;
-  this.readyPromise = defer();
+  this.readyPromise = Promise.resolve();
   this.hasWaterMask = true;
+  this.errorEvent = new Event();
 
   this._tileDataAvailable = {};
   this._requestTileGeometryWillSucceed = {};

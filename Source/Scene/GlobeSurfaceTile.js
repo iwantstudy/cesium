@@ -741,7 +741,13 @@ function requestTileGeometry(surfaceTile, terrainProvider, x, y, level) {
     // has been deferred.
     if (defined(requestPromise)) {
       surfaceTile.terrainState = TerrainState.RECEIVING;
-      Promise.resolve(requestPromise).then(success).catch(failure);
+      Promise.resolve(requestPromise)
+        .then(function (terrainData) {
+          success(terrainData);
+        })
+        .catch(function (e) {
+          failure(e);
+        });
     } else {
       // Deferred - try again later.
       surfaceTile.terrainState = TerrainState.UNLOADED;

@@ -349,21 +349,24 @@ describe(
       });
       camera.position = new Cartesian3(2.0, 0.0, 0.0);
 
-      const frameState = scene.frameState;
-      frameState.commandList.length = 0;
-      labels.blendOption = BlendOption.OPAQUE_AND_TRANSLUCENT;
-      labels.update(frameState);
-      expect(frameState.commandList.length).toEqual(2);
+      scene.renderForSpecs();
+      Promise.resolve().then(function () {
+        const frameState = scene.frameState;
+        frameState.commandList.length = 0;
+        labels.blendOption = BlendOption.OPAQUE_AND_TRANSLUCENT;
+        labels.update(frameState);
+        expect(frameState.commandList.length).toEqual(2);
 
-      frameState.commandList.length = 0;
-      labels.blendOption = BlendOption.OPAQUE;
-      labels.update(frameState);
-      expect(frameState.commandList.length).toEqual(1);
+        frameState.commandList.length = 0;
+        labels.blendOption = BlendOption.OPAQUE;
+        labels.update(frameState);
+        expect(frameState.commandList.length).toEqual(1);
 
-      frameState.commandList.length = 0;
-      labels.blendOption = BlendOption.TRANSLUCENT;
-      labels.update(frameState);
-      expect(frameState.commandList.length).toEqual(1);
+        frameState.commandList.length = 0;
+        labels.blendOption = BlendOption.TRANSLUCENT;
+        labels.update(frameState);
+        expect(frameState.commandList.length).toEqual(1);
+      });
     });
 
     it("can render after adding a label", function () {

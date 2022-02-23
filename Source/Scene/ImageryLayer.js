@@ -1009,11 +1009,11 @@ ImageryLayer.prototype._requestImagery = function (imagery) {
     }
 
     imagePromise
-      .then(function () {
-        success();
+      .then(function (image) {
+        success(image);
       })
-      .catch(function () {
-        failure();
+      .catch(function (e) {
+        failure(e);
       });
   }
 

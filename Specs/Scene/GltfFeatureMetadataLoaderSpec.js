@@ -1,6 +1,5 @@
 import {
   clone,
-  defer,
   GltfBufferViewLoader,
   GltfFeatureMetadataLoader,
   GltfTextureLoader,
@@ -216,10 +215,10 @@ describe(
     });
 
     it("rejects promise if buffer view fails to load", function () {
-      const error = new Error("404 Not Found");
-      spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
-        Promise.reject(error)
-      );
+      spyOn(Resource.prototype, "fetchArrayBuffer").and.callFake(function () {
+        const error = new Error("404 Not Found");
+        return Promise.reject(error);
+      });
 
       spyOn(Resource.prototype, "fetchImage").and.returnValue(
         Promise.resolve(image)
@@ -251,10 +250,10 @@ describe(
         Promise.resolve(buffer)
       );
 
-      const error = new Error("404 Not Found");
-      spyOn(Resource.prototype, "fetchImage").and.returnValue(
-        Promise.reject(error)
-      );
+      spyOn(Resource.prototype, "fetchImage").and.callFake(function () {
+        const error = new Error("404 Not Found");
+        return Promise.reject(error);
+      });
 
       const featureMetadataLoader = new GltfFeatureMetadataLoader({
         gltf: gltf,
@@ -286,10 +285,10 @@ describe(
         Promise.resolve(image)
       );
 
-      const error = new Error("404 Not Found");
-      spyOn(Resource.prototype, "fetchJson").and.returnValue(
-        Promise.reject(error)
-      );
+      spyOn(Resource.prototype, "fetchJson").and.callFake(function () {
+        const error = new Error("404 Not Found");
+        return Promise.reject(error);
+      });
 
       const featureMetadataLoader = new GltfFeatureMetadataLoader({
         gltf: gltfSchemaUri,
@@ -469,18 +468,21 @@ describe(
       });
     });
 
-    function resolveAfterDestroy(reject) {
+    function resolveAfterDestroy(rejectPromise) {
       spyOn(Resource.prototype, "fetchArrayBuffer").and.returnValue(
         Promise.resolve(buffer)
       );
       spyOn(Resource.prototype, "fetchImage").and.returnValue(
         Promise.resolve(image)
       );
-      const deferredPromise = defer();
-      spyOn(Resource.prototype, "fetchJson").and.returnValue(
-        deferredPromise.promise
-      );
-
+      const promise = new Promise(function (resolve, reject) {
+        if (rejectPromise) {
+          reject(new Error());
+          return;
+        }
+        resolve(schemaJson);
+      });
+      spyOn(Resource.prototype, "fetchJson").and.returnValue(promise);
       const destroyBufferView = spyOn(
         GltfBufferViewLoader.prototype,
         "destroy"
@@ -514,7 +516,7 @@ describe(
       featureMetadataLoaderCopy.load();
 
       return waitForLoaderProcess(featureMetadataLoaderCopy, scene).then(
-        function (featureMetadataLoaderCopy) {
+        function () {
           // Ignore featureMetadataLoaderCopy destroying its buffer views
           destroyBufferView.calls.reset();
 
@@ -528,12 +530,6 @@ describe(
           expect(featureMetadataLoader.featureMetadata).not.toBeDefined();
           featureMetadataLoader.load();
           featureMetadataLoader.destroy();
-
-          if (reject) {
-            deferredPromise.reject(new Error());
-          } else {
-            deferredPromise.resolve(schemaJson);
-          }
 
           expect(featureMetadataLoader.featureMetadata).not.toBeDefined();
           expect(featureMetadataLoader.isDestroyed()).toBe(true);
@@ -550,11 +546,11 @@ describe(
     }
 
     it("handles resolving resources after destroy", function () {
-      resolveAfterDestroy(false);
+      return resolveAfterDestroy(false);
     });
 
     it("handles rejecting resources after destroy", function () {
-      resolveAfterDestroy(true);
+      return resolveAfterDestroy(true);
     });
   },
   "WebGL"
