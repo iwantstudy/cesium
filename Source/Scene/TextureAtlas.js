@@ -352,6 +352,49 @@ function addImage(textureAtlas, image, index) {
   textureAtlas._guid = createGuid();
 }
 
+function getIndex(atlas, image) {
+  if (!defined(atlas) || atlas.isDestroyed()) {
+    return -1;
+  }
+
+  const index = atlas.numberOfImages;
+
+  addImage(atlas, image, index);
+
+  return index;
+}
+
+/**
+ * Adds an image to the atlas synchronously.  If the image is already in the atlas, the atlas is unchanged and
+ * the existing index is used.
+ *
+ * @param {String} id An identifier to detect whether the image already exists in the atlas.
+ * @param {HTMLImageElement|HTMLCanvasElement} image An image or canvas to add to the texture atlas.
+ * @returns {Number} The image index.
+ */
+TextureAtlas.prototype.addImageSync = function (id, image) {
+  //>>includeStart('debug', pragmas.debug);
+  if (!defined(id)) {
+    throw new DeveloperError("id is required.");
+  }
+  if (!defined(image)) {
+    throw new DeveloperError("image is required.");
+  }
+  //>>includeEnd('debug');
+
+  let index = this._idHash[id];
+  if (defined(index)) {
+    // we're already aware of this source
+    return index;
+  }
+
+  index = getIndex(this, image);
+  // store the promise
+  this._idHash[id] = Promise.resolve(index);
+  // but return the value synchronously
+  return index;
+};
+
 /**
  * Adds an image to the atlas.  If the image is already in the atlas, the atlas is unchanged and
  * the existing index is used.
@@ -394,17 +437,8 @@ TextureAtlas.prototype.addImage = function (id, image) {
   }
 
   const that = this;
-
   indexPromise = Promise.resolve(image).then(function (image) {
-    if (that.isDestroyed()) {
-      return -1;
-    }
-
-    const index = that.numberOfImages;
-
-    addImage(that, image, index);
-
-    return index;
+    return getIndex(that, image);
   });
 
   // store the promise

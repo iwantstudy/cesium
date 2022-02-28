@@ -406,6 +406,7 @@ describe(
       });
       return Promise.resolve(tileset).then(function () {
         expect(tileset.resource.url).toEqual(path);
+        return tileset.readyPromise;
       });
     });
 
@@ -417,6 +418,7 @@ describe(
       });
       return Promise.resolve(tileset).then(function () {
         expect(tileset.resource.url).toEqual(path + param);
+        return tileset.readyPromise;
       });
     });
 
@@ -4070,10 +4072,10 @@ describe(
           );
 
           // Stays in the expired state until the request goes through
-          const originalMaxmimumRequests = RequestScheduler.maximumRequests;
+          const originalMaximumRequests = RequestScheduler.maximumRequests;
           RequestScheduler.maximumRequests = 0; // Artificially limit Request Scheduler so the request won't go through
           scene.renderForSpecs();
-          RequestScheduler.maximumRequests = originalMaxmimumRequests;
+          RequestScheduler.maximumRequests = originalMaximumRequests;
           const expiredContent = tile._expiredContent;
           expect(tile.contentExpired).toBe(true);
           expect(tile.contentAvailable).toBe(true); // Expired content now exists
@@ -4221,7 +4223,7 @@ describe(
               deferred,
               overrideMimeType
             ) {
-              deferred.reject();
+              deferred.reject(new Error());
             }
           );
           const tile = tileset.root;
@@ -4240,11 +4242,18 @@ describe(
           // Make request (it will fail)
           scene.renderForSpecs();
 
-          // Render scene
-          scene.renderForSpecs();
-          expect(tile._contentState).toBe(Cesium3DTileContentState.FAILED);
-          expect(statistics.numberOfCommands).toBe(0);
-          expect(statistics.numberOfTilesTotal).toBe(1);
+          return tile.contentReadyPromise
+            .then(function () {
+              fail();
+            })
+            .catch(function () {
+              // Render scene
+              scene.renderForSpecs();
+
+              expect(tile._contentState).toBe(Cesium3DTileContentState.FAILED);
+              expect(statistics.numberOfCommands).toBe(0);
+              expect(statistics.numberOfTilesTotal).toBe(1);
+            });
         }
       );
     });

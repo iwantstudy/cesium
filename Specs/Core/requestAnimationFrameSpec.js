@@ -6,12 +6,10 @@ import {
 
 describe("Core/requestAnimationFrame", function () {
   it("calls the callback", function () {
-    const deferred = defer();
-    const requestID = requestAnimationFrame(function () {
-      deferred.resolve();
+    const promise = new Promise(requestAnimationFrame);
+    return promise.then(function (requestId) {
+      expect(requestId).toBeDefined();
     });
-    expect(requestID).toBeDefined();
-    return deferred.promise;
   });
 
   it("provides a timestamp that increases each frame", function () {

@@ -542,12 +542,14 @@ describe("Scene/BingMapsImageryProvider", function () {
       errorEventRaised = true;
     });
 
-    return pollToPromise(function () {
-      return provider.ready || errorEventRaised;
-    }).then(function () {
-      expect(provider.ready).toEqual(false);
-      expect(errorEventRaised).toEqual(true);
-    });
+    return provider.readyPromise
+      .then(function () {
+        fail();
+      })
+      .catch(function () {
+        expect(provider.ready).toEqual(false);
+        expect(errorEventRaised).toEqual(true);
+      });
   });
 
   it("raises error event when image cannot be loaded", function () {

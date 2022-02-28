@@ -387,7 +387,14 @@ function ArcGisMapServerImageryProvider(options) {
         f: "json",
       },
     });
-    resource.fetchJsonp().then(metadataSuccess).catch(metadataFailure);
+    resource
+      .fetchJsonp()
+      .then(function (result) {
+        metadataSuccess(result);
+      })
+      .catch(function (e) {
+        metadataFailure(e);
+      });
   }
 
   if (this._useTiles) {
