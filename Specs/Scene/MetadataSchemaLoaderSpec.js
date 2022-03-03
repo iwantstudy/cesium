@@ -62,10 +62,10 @@ describe("Scene/MetadataSchemaLoader", function () {
   });
 
   it("rejects promise if schema cannot be fetched", function () {
-    const error = new Error("404 Not Found");
-    spyOn(Resource.prototype, "fetchJson").and.returnValue(
-      Promise.reject(error)
-    );
+    spyOn(Resource.prototype, "fetchJson").and.callFake(function () {
+      const error = new Error("404 Not Found");
+      return Promise.reject(error);
+    });
 
     const schemaLoader = new MetadataSchemaLoader({
       resource: resource,

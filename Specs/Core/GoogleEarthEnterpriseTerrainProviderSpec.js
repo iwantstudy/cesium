@@ -166,6 +166,8 @@ describe("Core/GoogleEarthEnterpriseTerrainProvider", function () {
   });
 
   it("returns reasonable geometric error for various levels", function () {
+    installMockGetQuadTreePacket();
+
     terrainProvider = new GoogleEarthEnterpriseTerrainProvider({
       url: "made/up/url",
     });

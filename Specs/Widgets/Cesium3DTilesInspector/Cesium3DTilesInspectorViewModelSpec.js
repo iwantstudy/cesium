@@ -2,7 +2,6 @@ import {
   Cesium3DTileset,
   Cesium3DTilesInspectorViewModel,
   Cesium3DTileStyle,
-  defer,
   Globe,
 } from "../../../Source/Cesium.js";
 import createScene from "../../createScene.js";
@@ -67,16 +66,13 @@ describe(
           url: tilesetUrl,
         });
         viewModel.tileset = tileset;
-        const done = defer();
-        tileset.readyPromise.then(function () {
+        return tileset.readyPromise.then(function () {
           expect(viewModel.properties.indexOf("id") !== -1).toBe(true);
           expect(viewModel.properties.indexOf("Longitude") !== -1).toBe(true);
           expect(viewModel.properties.indexOf("Latitude") !== -1).toBe(true);
           expect(viewModel.properties.indexOf("Height") !== -1).toBe(true);
           viewModel.destroy();
-          done.resolve();
         });
-        return done;
       });
     });
 
@@ -337,10 +333,12 @@ describe(
         viewModel.styleString = JSON.stringify(s);
         viewModel.compileStyle();
         viewModel._update();
-        expect(viewModel.tileset.style.style.color).toBe("color('red')");
-        expect(viewModel.tileset.style.style.meta.description).toBe(
-          "'Building id ${id} has height ${Height}.'"
-        );
+        return style.readyPromise.then(function () {
+          expect(viewModel.tileset.style.style.color).toBe("color('red')");
+          expect(viewModel.tileset.style.style.meta.description).toBe(
+            "'Building id ${id} has height ${Height}.'"
+          );
+        });
       });
 
       it("does not throw on invalid value", function () {

@@ -153,6 +153,7 @@ describe(
           Cartesian3.fromDegrees(0.0, 0.0, 30.0),
           new Cartesian3(0.0, 0.0, 50.0)
         );
+        scene.renderForSpecs();
         expect(scene).toRender([255, 255, 255, 255]);
       });
     });

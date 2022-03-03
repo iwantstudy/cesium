@@ -1154,6 +1154,27 @@ describe("Scene/ArcGisMapServerImageryProvider", function () {
 
       provider.enablePickFeatures = true;
 
+      Resource._Implementations.loadWithXhr = function (
+        url,
+        responseType,
+        method,
+        data,
+        headers,
+        deferred,
+        overrideMimeType
+      ) {
+        expect(url).toContain("identify");
+        Resource._DefaultImplementations.loadWithXhr(
+          "Data/ArcGIS/identify-WebMercator.json",
+          responseType,
+          method,
+          data,
+          headers,
+          deferred,
+          overrideMimeType
+        );
+      };
+
       return provider.readyPromise
         .then(function () {
           return provider.pickFeatures(0, 0, 0, 0.5, 0.5);

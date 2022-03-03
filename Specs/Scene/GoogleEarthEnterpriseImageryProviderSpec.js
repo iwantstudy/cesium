@@ -291,12 +291,17 @@ describe("Scene/GoogleEarthEnterpriseImageryProvider", function () {
       errorEventRaised = true;
     });
 
-    return pollToPromise(function () {
-      return imageryProvider.ready || errorEventRaised;
-    }).then(function () {
-      expect(imageryProvider.ready).toEqual(false);
-      expect(errorEventRaised).toEqual(true);
-    });
+    return imageryProvider.readyPromise
+      .then(function () {
+        fail();
+      })
+      .catch(function () {
+        // Catch the error
+      })
+      .finally(function () {
+        expect(imageryProvider.ready).toEqual(false);
+        expect(errorEventRaised).toEqual(true);
+      });
   });
 
   it("raises error event when image cannot be loaded", function () {

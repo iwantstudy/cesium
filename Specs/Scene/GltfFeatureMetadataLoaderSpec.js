@@ -475,13 +475,19 @@ describe(
       spyOn(Resource.prototype, "fetchImage").and.returnValue(
         Promise.resolve(image)
       );
-      const promise = new Promise(function (resolve, reject) {
+      let promise = new Promise(function (resolve, reject) {
         if (rejectPromise) {
-          reject(new Error());
+          const error = new Error("404 Not Found");
+          reject(error);
           return;
         }
         resolve(schemaJson);
       });
+      if (rejectPromise) {
+        promise = promise.catch(function (e) {
+          // handle that error we just threw
+        });
+      }
       spyOn(Resource.prototype, "fetchJson").and.returnValue(promise);
       const destroyBufferView = spyOn(
         GltfBufferViewLoader.prototype,
@@ -512,6 +518,10 @@ describe(
       const schemaCopy = ResourceCache.loadSchema({
         resource: schemaResource,
       });
+
+      if (rejectPromise) {
+        schemaCopy.promise.catch(function () {});
+      }
 
       featureMetadataLoaderCopy.load();
 

@@ -1685,7 +1685,8 @@ describe(
           );
           const featureIdAttribute = getAttribute(
             instancedAttributes,
-            InstanceAttributeSemantic.FEATURE_ID_0
+            InstanceAttributeSemantic.FEATURE_ID,
+            0
           );
 
           expect(positionAttribute).toBeDefined();
@@ -1804,7 +1805,8 @@ describe(
           );
           const featureIdAttribute = getAttribute(
             instancedAttributes,
-            InstanceAttributeSemantic.FEATURE_ID_0
+            InstanceAttributeSemantic.FEATURE_ID,
+            0
           );
 
           expect(positionAttribute).toBeDefined();
@@ -2414,10 +2416,10 @@ describe(
     });
 
     it("rejects promise if resource fails to load", function () {
-      const error = new Error("404 Not Found");
-      spyOn(Resource.prototype, "fetchImage").and.returnValue(
-        Promise.reject(error)
-      );
+      spyOn(Resource.prototype, "fetchImage").and.callFake(function () {
+        const error = new Error("404 Not Found");
+        return Promise.reject(error);
+      });
 
       const destroyVertexBufferLoader = spyOn(
         GltfVertexBufferLoader.prototype,

@@ -42,7 +42,7 @@ function customizeJasmine(
             done();
           })
           .catch(function (e) {
-            done.fail(e);
+            done.fail(`promise rejected: ${e.toString()}`);
           });
       },
       timeout,
@@ -60,7 +60,7 @@ function customizeJasmine(
           done();
         })
         .catch(function (e) {
-          done.fail(e);
+          done.fail(`promise rejected: ${e.toString()}`);
         });
     });
   };
@@ -75,7 +75,7 @@ function customizeJasmine(
           done();
         })
         .catch(function (e) {
-          done.fail(e);
+          done.fail(`promise rejected: ${e.toString()}`);
         });
     });
   };
@@ -90,7 +90,7 @@ function customizeJasmine(
           done();
         })
         .catch(function (e) {
-          done.fail(e);
+          done.fail(`promise rejected: ${e.toString()}`);
         });
     });
   };
@@ -105,7 +105,7 @@ function customizeJasmine(
           done();
         })
         .catch(function (e) {
-          done.fail(e);
+          done.fail(`promise rejected: ${e.toString()}`);
         });
     });
   };

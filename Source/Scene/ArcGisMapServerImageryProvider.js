@@ -265,6 +265,9 @@ function ArcGisMapServerImageryProvider(options) {
           undefined,
           requestMetadata
         );
+        if (!metadataError.retry) {
+          that._readyPromise.reject(new RuntimeError(message));
+        }
         return;
       }
       that._maximumLevel = data.tileInfo.lods.length - 1;
@@ -331,6 +334,9 @@ function ArcGisMapServerImageryProvider(options) {
               undefined,
               requestMetadata
             );
+            if (!metadataError.retry) {
+              that._readyPromise.reject(new RuntimeError(extentMessage));
+            }
             return;
           }
         }
