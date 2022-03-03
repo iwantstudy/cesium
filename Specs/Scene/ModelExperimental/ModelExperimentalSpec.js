@@ -32,12 +32,15 @@ describe(
       "./Data/Models/GltfLoader/BuildingsMetadata/glTF/buildings-metadata.gltf";
     const boxTexturedGltfUrl =
       "./Data/Models/GltfLoader/BoxTextured/glTF/BoxTextured.gltf";
+    const boxWithCreditsUrl =
+      "./Data/Models/GltfLoader/BoxWithCopyright/glTF/Box.gltf";
     const microcosm = "./Data/Models/GltfLoader/Microcosm/glTF/microcosm.gltf";
     const boxInstanced =
       "./Data/Models/GltfLoader/BoxInstanced/glTF/box-instanced.gltf";
     const boxBackFaceCullingUrl =
       "./Data/Models/Box-Back-Face-Culling/Box-Back-Face-Culling.gltf";
     const boxBackFaceCullingOffset = new HeadingPitchRange(Math.PI / 2, 0, 2.0);
+
     let scene;
 
     beforeAll(function () {
@@ -203,6 +206,117 @@ describe(
       });
     });
 
+    it("gets copyrights from gltf", function () {
+      const resource = Resource.createIfNeeded(boxWithCreditsUrl);
+      return resource.fetchJson().then(function (gltf) {
+        return loadAndZoomToModelExperimental(
+          {
+            gltf: gltf,
+            basePath: boxWithCreditsUrl,
+          },
+          scene
+        ).then(function (model) {
+          const expectedCredits = [
+            "First Source",
+            "Second Source",
+            "Third Source",
+          ];
+
+          scene.renderForSpecs();
+          const creditDisplay = scene.frameState.creditDisplay;
+          const credits =
+            creditDisplay._currentFrameCredits.lightboxCredits.values;
+          const length = credits.length;
+          expect(length).toEqual(expectedCredits.length);
+          for (let i = 0; i < length; i++) {
+            expect(credits[i].credit.html).toEqual(expectedCredits[i]);
+          }
+        });
+      });
+    });
+
+    it("shows credits on screen", function () {
+      const resource = Resource.createIfNeeded(boxWithCreditsUrl);
+      return resource.fetchJson().then(function (gltf) {
+        return loadAndZoomToModelExperimental(
+          {
+            gltf: gltf,
+            basePath: boxWithCreditsUrl,
+            showCreditsOnScreen: true,
+          },
+          scene
+        ).then(function (model) {
+          const expectedCredits = [
+            "First Source",
+            "Second Source",
+            "Third Source",
+          ];
+
+          scene.renderForSpecs();
+          const creditDisplay = scene.frameState.creditDisplay;
+          const credits =
+            creditDisplay._currentFrameCredits.screenCredits.values;
+          const length = credits.length;
+          expect(length).toEqual(expectedCredits.length);
+          for (let i = 0; i < length; i++) {
+            expect(credits[i].credit.html).toEqual(expectedCredits[i]);
+          }
+        });
+      });
+    });
+
+    it("toggles showing credits on screen", function () {
+      const resource = Resource.createIfNeeded(boxWithCreditsUrl);
+      return resource.fetchJson().then(function (gltf) {
+        return loadAndZoomToModelExperimental(
+          {
+            gltf: gltf,
+            basePath: boxWithCreditsUrl,
+            showCreditsOnScreen: false,
+          },
+          scene
+        ).then(function (model) {
+          const expectedCredits = [
+            "First Source",
+            "Second Source",
+            "Third Source",
+          ];
+
+          scene.renderForSpecs();
+          const creditDisplay = scene.frameState.creditDisplay;
+          const lightboxCredits =
+            creditDisplay._currentFrameCredits.lightboxCredits.values;
+          const screenCredits =
+            creditDisplay._currentFrameCredits.screenCredits.values;
+
+          let length = lightboxCredits.length;
+          expect(length).toEqual(expectedCredits.length);
+          for (let i = 0; i < length; i++) {
+            expect(lightboxCredits[i].credit.html).toEqual(expectedCredits[i]);
+          }
+          expect(screenCredits.length).toEqual(0);
+
+          model.showCreditsOnScreen = true;
+          scene.renderForSpecs();
+          length = screenCredits.length;
+          expect(length).toEqual(expectedCredits.length);
+          for (let i = 0; i < length; i++) {
+            expect(screenCredits[i].credit.html).toEqual(expectedCredits[i]);
+          }
+          expect(lightboxCredits.length).toEqual(0);
+
+          model.showCreditsOnScreen = false;
+          scene.renderForSpecs();
+          length = lightboxCredits.length;
+          expect(length).toEqual(expectedCredits.length);
+          for (let i = 0; i < length; i++) {
+            expect(lightboxCredits[i].credit.html).toEqual(expectedCredits[i]);
+          }
+          expect(screenCredits.length).toEqual(0);
+        });
+      });
+    });
+
     it("show works", function () {
       const resource = Resource.createIfNeeded(boxTexturedGlbUrl);
       const loadPromise = resource.fetchArrayBuffer();
@@ -264,7 +378,8 @@ describe(
       });
     });
 
-    it("renders model with style", function () {
+    // see https://github.com/CesiumGS/cesium/pull/10115
+    xit("renders model with style", function () {
       let model;
       let style;
       return loadAndZoomToModelExperimental({ gltf: buildingsMetadata }, scene)
@@ -470,6 +585,32 @@ describe(
       });
     });
 
+    it("initializes with model matrix", function () {
+      const translation = new Cartesian3(10, 0, 0);
+      const transform = Matrix4.fromTranslation(translation);
+
+      return loadAndZoomToModelExperimental(
+        {
+          gltf: boxTexturedGlbUrl,
+          upAxis: Axis.Z,
+          forwardAxis: Axis.X,
+          modelMatrix: transform,
+        },
+        scene
+      ).then(function (model) {
+        const sceneGraph = model.sceneGraph;
+        scene.renderForSpecs();
+        expect(Matrix4.equals(sceneGraph.computedModelMatrix, transform)).toBe(
+          true
+        );
+        verifyRender(model, false);
+        expect(model.boundingSphere.center).toEqual(translation);
+
+        expect(sceneGraph.computedModelMatrix).not.toBe(transform);
+        expect(model.modelMatrix).not.toBe(transform);
+      });
+    });
+
     it("changing model matrix works", function () {
       const updateModelMatrix = spyOn(
         ModelExperimentalSceneGraph.prototype,
@@ -479,6 +620,7 @@ describe(
         { gltf: boxTexturedGlbUrl, upAxis: Axis.Z, forwardAxis: Axis.X },
         scene
       ).then(function (model) {
+        verifyRender(model, true);
         const sceneGraph = model.sceneGraph;
 
         const transform = Matrix4.fromTranslation(new Cartesian3(10, 0, 0));
@@ -494,6 +636,28 @@ describe(
         expect(Matrix4.equals(sceneGraph.computedModelMatrix, transform)).toBe(
           true
         );
+        verifyRender(model, false);
+      });
+    });
+
+    it("changing model matrix affects bounding sphere", function () {
+      const translation = new Cartesian3(10, 0, 0);
+      return loadAndZoomToModelExperimental(
+        { gltf: boxTexturedGlbUrl, upAxis: Axis.Z, forwardAxis: Axis.X },
+        scene
+      ).then(function (model) {
+        const transform = Matrix4.fromTranslation(translation);
+        expect(model.boundingSphere.center).toEqual(Cartesian3.ZERO);
+
+        Matrix4.multiplyTransformation(
+          model.modelMatrix,
+          transform,
+          model.modelMatrix
+        );
+        scene.renderForSpecs();
+
+        expect(model.boundingSphere.center).toEqual(translation);
+        verifyRender(model, false);
       });
     });
 

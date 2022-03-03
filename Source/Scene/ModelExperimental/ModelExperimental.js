@@ -1,3 +1,4 @@
+import BoundingSphere from "../../Core/BoundingSphere.js";
 import Check from "../../Core/Check.js";
 import ColorBlendMode from "../ColorBlendMode.js";
 import defined from "../../Core/defined.js";
@@ -18,6 +19,7 @@ import B3dmLoader from "./B3dmLoader.js";
 import PntsLoader from "./PntsLoader.js";
 import Color from "../../Core/Color.js";
 import I3dmLoader from "./I3dmLoader.js";
+import ShadowMode from "../ShadowMode.js";
 
 /**
  * A 3D model. This is a new architecture that is more decoupled than the older {@link Model}. This class is still experimental.
@@ -46,6 +48,8 @@ import I3dmLoader from "./I3dmLoader.js";
  * @param {Number} [options.instanceFeatureIdIndex=0] The index into the list of instance feature IDs used for picking and styling. If both per-primitive and per-instance feature IDs are present, the instance feature IDs take priority.
  * @param {Object} [options.pointCloudShading] Options for constructing a {@link PointCloudShading} object to control point attenuation based on geometric error and lighting.
  * @param {Boolean} [options.backFaceCulling=true] Whether to cull back-facing geometry. When true, back face culling is determined by the material's doubleSided property; when false, back face culling is disabled. Back faces are not culled if the model's color is translucent.
+ * @param {ShadowMode} [options.shadows=ShadowMode.ENABLED] Determines whether the model casts or receives shadows from light sources.
+ * @param {Boolean} [options.showCreditsOnScreen=false] Whether to display the credits of this model on screen.
  * @experimental This feature is using part of the 3D Tiles spec that is not final and is subject to change without Cesium's standard deprecation policy.
  */
 export default function ModelExperimental(options) {
@@ -133,8 +137,7 @@ export default function ModelExperimental(options) {
 
   // Keeps track of resources that need to be destroyed when the Model is destroyed.
   this._resources = [];
-
-  this._boundingSphere = undefined;
+  this._boundingSphere = new BoundingSphere();
 
   const pointCloudShading = new PointCloudShading(options.pointCloudShading);
   this._attenuation = pointCloudShading.attenuation;
@@ -143,11 +146,16 @@ export default function ModelExperimental(options) {
   this._backFaceCulling = defaultValue(options.backFaceCulling, true);
   this._backFaceCullingDirty = false;
 
+  this._shadows = defaultValue(options.shadows, ShadowMode.ENABLED);
+  this._shadowsDirty = false;
+
   this._debugShowBoundingVolumeDirty = false;
   this._debugShowBoundingVolume = defaultValue(
     options.debugShowBoundingVolume,
     false
   );
+
+  this._showCreditsOnScreen = defaultValue(options.showCreditsOnScreen, false);
 
   initialize(this);
 }
@@ -534,7 +542,7 @@ Object.defineProperties(ModelExperimental.prototype, {
       }
       //>>includeEnd('debug');
 
-      return this._sceneGraph.boundingSphere;
+      return this._boundingSphere;
     },
   },
 
@@ -652,6 +660,42 @@ Object.defineProperties(ModelExperimental.prototype, {
       this._backFaceCulling = value;
     },
   },
+
+  /**
+   * Determines whether the model casts or receives shadows from light sources.
+   *
+   * @type {ShadowMode}
+   *
+   * @default ShadowMode.ENABLED
+   */
+  shadows: {
+    get: function () {
+      return this._shadows;
+    },
+    set: function (value) {
+      if (value !== this._shadows) {
+        this._shadowsDirty = true;
+      }
+
+      this._shadows = value;
+    },
+  },
+
+  /**
+   * Gets or sets whether the credits of the model will be displayed on the screen
+   * @memberof ModelExperimental.prototype
+   * @type {Boolean}
+   *
+   * @default false
+   */
+  showCreditsOnScreen: {
+    get: function () {
+      return this._showCreditsOnScreen;
+    },
+    set: function (value) {
+      this._showCreditsOnScreen = value;
+    },
+  },
 });
 
 /**
@@ -741,8 +785,16 @@ ModelExperimental.prototype.update = function (frameState) {
     this._debugShowBoundingVolumeDirty = false;
   }
 
+  // This is done without a dirty flag so that the model matrix can be update in-place
+  // without needing to use a setter.
   if (!Matrix4.equals(this.modelMatrix, this._modelMatrix)) {
     this._sceneGraph.updateModelMatrix(this);
+    this._modelMatrix = Matrix4.clone(this.modelMatrix);
+    BoundingSphere.transform(
+      this._sceneGraph.boundingSphere,
+      this.modelMatrix,
+      this._boundingSphere
+    );
   }
 
   if (this._backFaceCullingDirty) {
@@ -750,11 +802,26 @@ ModelExperimental.prototype.update = function (frameState) {
     this._backFaceCullingDirty = false;
   }
 
+  if (this._shadowsDirty) {
+    this.sceneGraph.updateShadows(this._shadows);
+    this._shadowsDirty = false;
+  }
+
   this._sceneGraph.update(frameState);
 
   // Check for show here because we still want the draw commands to be built so user can instantly see the model
   // when show is set to true.
   if (this._show) {
+    const asset = this._sceneGraph.components.asset;
+    const credits = asset.credits;
+
+    const length = credits.length;
+    for (let i = 0; i < length; i++) {
+      const credit = credits[i];
+      credit.showOnScreen = this._showCreditsOnScreen;
+      frameState.creditDisplay.addCredit(credit);
+    }
+
     const drawCommands = this._sceneGraph.getDrawCommands();
     frameState.commandList.push.apply(frameState.commandList, drawCommands);
   }
@@ -862,7 +929,8 @@ ModelExperimental.prototype.destroyResources = function () {
  * @param {Number} [options.instanceFeatureIdIndex=0] The index into the list of instance feature IDs used for picking and styling. If both per-primitive and per-instance feature IDs are present, the instance feature IDs take priority.
  * @param {Object} [options.pointCloudShading] Options for constructing a {@link PointCloudShading} object to control point attenuation and lighting.
  * @param {Boolean} [options.backFaceCulling=true] Whether to cull back-facing geometry. When true, back face culling is determined by the material's doubleSided property; when false, back face culling is disabled. Back faces are not culled if the model's color is translucent.
- *
+ * @param {ShadowMode} [options.shadows=ShadowMode.ENABLED] Determines whether the model casts or receives shadows from light sources.
+ * @param {Boolean} [options.showCreditsOnScreen=false] Whether to display the credits of this model on screen.
  * @returns {ModelExperimental} The newly created model.
  */
 ModelExperimental.fromGltf = function (options) {
@@ -921,6 +989,8 @@ ModelExperimental.fromGltf = function (options) {
     instanceFeatureIdIndex: options.instanceFeatureIdIndex,
     pointCloudShading: options.pointCloudShading,
     backFaceCulling: options.backFaceCulling,
+    shadows: options.shadows,
+    showCreditsOnScreen: options.showCreditsOnScreen,
   };
   const model = new ModelExperimental(modelOptions);
 
