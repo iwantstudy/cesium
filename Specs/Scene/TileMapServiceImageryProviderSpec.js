@@ -879,11 +879,13 @@ describe("Scene/TileMapServiceImageryProvider", function () {
       errorRaised = true;
     });
 
-    return pollToPromise(function () {
-      return errorRaised;
-    }).then(function () {
-      expect(errorRaised).toBe(true);
-    });
+    return provider.readyPromise
+      .then(function () {
+        fail();
+      })
+      .catch(function (e) {
+        expect(errorRaised).toBe(true);
+      });
   });
 
   it("forces minimum detail level to zero if the tilemapresource.xml request fails and the constructor minimum level is too high", function () {

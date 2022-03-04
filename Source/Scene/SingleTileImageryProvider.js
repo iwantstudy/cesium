@@ -186,7 +186,9 @@ function SingleTileImageryProvider(options) {
       doRequest,
       e
     );
-    that._readyPromise.reject(new RuntimeError(message));
+    if (!error.retry) {
+      that._readyPromise.reject(new RuntimeError(message));
+    }
   }
 
   function doRequest() {

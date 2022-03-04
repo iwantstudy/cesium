@@ -297,7 +297,7 @@ OctahedralProjectedCubeMap.prototype.update = function (frameState) {
         that._loading = false;
       })
       .catch(function (e) {
-        this._readyPromise.reject(e);
+        that._readyPromise.reject(e);
       });
     this._loading = true;
   }
