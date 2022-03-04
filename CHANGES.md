@@ -1,5 +1,16 @@
 # Change Log
 
+### 1.92 - 2022-04-01
+
+##### Breaking Changes :mega:
+
+- Removed `Cesium.when`. Any `Promise`in the Cesium API has changed to the native `Promise` API. Code bases using cesium will likely need updates after this change. See the [upgrade guide](https://community.cesium.com/t/cesiumjs-is-switching-from-when-js-to-native-promises-which-will-be-a-breaking-change-in-1-92/17213) for instructions on how to update your code base to be compliant with native promises.
+- `ArcGisMapServerImageryProvider` will now reject `readyPromise` if there is a failure while loading that will not be retried.
+
+##### Additions :tada:
+
+- Added `defer` to create deferred objects which contain a promise object representing the eventual completion (or failure) of an asynchronous operation, and functions to resolve or reject the promise.
+
 ### 1.91 - 2022-03-01
 
 ##### Breaking Changes :mega:
