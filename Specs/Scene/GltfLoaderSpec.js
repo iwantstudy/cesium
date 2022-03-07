@@ -2406,11 +2406,13 @@ describe(
 
       gltfLoader.load();
 
-      gltfLoader.texturesLoadedPromise.catch(function (runtimeError) {
-        // Because of how the error is handled, textureLoadedPromise also rejects which must be caught
-      });
+      const textureLoaderPromise = gltfLoader.texturesLoadedPromise.catch(
+        function (runtimeError) {
+          // Because of how the error is handled, textureLoadedPromise also rejects which must be caught
+        }
+      );
 
-      return gltfLoader.promise
+      const promise = gltfLoader.promise
         .then(function () {
           fail();
         })
@@ -2419,6 +2421,8 @@ describe(
             "Failed to load glTF\nFailed to load glTF: https://example.com/model.glb\n404 Not Found"
           );
         });
+
+      return Promise.all([promise, textureLoaderPromise]);
     });
 
     it("rejects promise if resource fails to load", function () {
@@ -2450,13 +2454,15 @@ describe(
       gltfLoaders.push(gltfLoader);
       gltfLoader.load();
 
-      gltfLoader.texturesLoadedPromise.catch(function (runtimeError) {
+      const texturePromise = gltfLoader.texturesLoadedPromise.catch(function (
+        runtimeError
+      ) {
         expect(runtimeError.message).toBe(
           "Failed to load glTF\nFailed to load texture\nFailed to load image: CesiumLogoFlat.png\n404 Not Found"
         );
       });
 
-      return waitForLoaderProcess(gltfLoader, scene)
+      const promise = waitForLoaderProcess(gltfLoader, scene)
         .then(function (gltfLoader) {
           fail();
         })
@@ -2468,6 +2474,8 @@ describe(
           expect(destroyIndexBufferLoader.calls.count()).toBe(1);
           expect(destroyTextureLoader.calls.count()).toBe(1);
         });
+
+      return Promise.all([texturePromise, promise]);
     });
 
     function resolveGltfJsonAfterDestroy(reject) {

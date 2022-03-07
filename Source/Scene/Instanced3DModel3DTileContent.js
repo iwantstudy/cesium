@@ -463,11 +463,15 @@ function initialize(content, arrayBuffer, byteOffset) {
   content._modelInstanceCollection = new ModelInstanceCollection(
     collectionOptions
   );
-  content._modelInstanceCollection.readyPromise.then(function (collection) {
-    collection.activeAnimations.addAll({
-      loop: ModelAnimationLoop.REPEAT,
+  content._modelInstanceCollection.readyPromise
+    .then(function (collection) {
+      collection.activeAnimations.addAll({
+        loop: ModelAnimationLoop.REPEAT,
+      });
+    })
+    .catch(function () {
+      // The readyPromise failure is handled in modelInstanceCollection
     });
-  });
 }
 
 function createFeatures(content) {

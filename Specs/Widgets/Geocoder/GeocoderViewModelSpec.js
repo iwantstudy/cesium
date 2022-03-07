@@ -274,21 +274,23 @@ describe(
         geocoderServices: [customGeocoderOptions],
       });
       viewModel._searchText = "some_text";
-      GeocoderViewModel._updateSearchSuggestions(viewModel).then(function () {
-        expect(viewModel._selectedSuggestion).toEqual(undefined);
-        viewModel._handleArrowDown(viewModel);
-        expect(viewModel._selectedSuggestion.displayName).toEqual("a");
-        viewModel._handleArrowDown(viewModel);
-        viewModel._handleArrowDown(viewModel);
-        expect(viewModel._selectedSuggestion.displayName).toEqual("c");
-        viewModel._handleArrowDown(viewModel);
-        expect(viewModel._selectedSuggestion.displayName).toEqual("a");
-        viewModel._handleArrowDown(viewModel);
-        viewModel._handleArrowUp(viewModel);
-        expect(viewModel._selectedSuggestion.displayName).toEqual("a");
-        viewModel._handleArrowUp(viewModel);
-        expect(viewModel._selectedSuggestion).toBeUndefined();
-      });
+      return GeocoderViewModel._updateSearchSuggestions(viewModel).then(
+        function () {
+          expect(viewModel._selectedSuggestion).toEqual(undefined);
+          viewModel._handleArrowDown(viewModel);
+          expect(viewModel._selectedSuggestion.displayName).toEqual("a");
+          viewModel._handleArrowDown(viewModel);
+          viewModel._handleArrowDown(viewModel);
+          expect(viewModel._selectedSuggestion.displayName).toEqual("c");
+          viewModel._handleArrowDown(viewModel);
+          expect(viewModel._selectedSuggestion.displayName).toEqual("a");
+          viewModel._handleArrowDown(viewModel);
+          viewModel._handleArrowUp(viewModel);
+          expect(viewModel._selectedSuggestion.displayName).toEqual("a");
+          viewModel._handleArrowUp(viewModel);
+          expect(viewModel._selectedSuggestion).toBeUndefined();
+        }
+      );
     });
   },
   "WebGL"
