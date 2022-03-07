@@ -2406,6 +2406,10 @@ describe(
 
       gltfLoader.load();
 
+      gltfLoader.texturesLoadedPromise.catch(function (runtimeError) {
+        // Because of how the error is handled, textureLoadedPromise also rejects which must be caught
+      });
+
       return gltfLoader.promise
         .then(function () {
           fail();
@@ -2442,7 +2446,17 @@ describe(
         releaseGltfJson: true,
       };
 
-      return loadGltf(boxTextured, options)
+      const gltfLoader = new GltfLoader(getOptions(boxTextured, options));
+      gltfLoaders.push(gltfLoader);
+      gltfLoader.load();
+
+      gltfLoader.texturesLoadedPromise.catch(function (runtimeError) {
+        expect(runtimeError.message).toBe(
+          "Failed to load glTF\nFailed to load texture\nFailed to load image: CesiumLogoFlat.png\n404 Not Found"
+        );
+      });
+
+      return waitForLoaderProcess(gltfLoader, scene)
         .then(function (gltfLoader) {
           fail();
         })
