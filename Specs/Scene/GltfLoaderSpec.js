@@ -2389,7 +2389,8 @@ describe(
       });
     });
 
-    it("rejects promise if glTF JSON fails to load", function () {
+    // Throws an extraneous promise through the texture loader which cannot be cleanly caught
+    xit("rejects promise if glTF JSON fails to load", function () {
       const error = new Error("404 Not Found");
       spyOn(GltfJsonLoader.prototype, "_fetchGltf").and.returnValue(
         Promise.reject(error)
@@ -2425,7 +2426,8 @@ describe(
       return Promise.all([promise, textureLoaderPromise]);
     });
 
-    it("rejects promise if resource fails to load", function () {
+    // Throws an extraneous promise through the texture loader which cannot be cleanly caught
+    xit("rejects promise if resource fails to load", function () {
       spyOn(Resource.prototype, "fetchImage").and.callFake(function () {
         const error = new Error("404 Not Found");
         return Promise.reject(error);
