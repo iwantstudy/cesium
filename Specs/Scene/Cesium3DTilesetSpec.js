@@ -3844,6 +3844,8 @@ describe(
         const commandList = scene.frameState.commandList;
         expect(commandList[0]).toBeInstanceOf(ClearCommand);
         expect(commandList[0].stencil).toBe(0);
+
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -3880,6 +3882,8 @@ describe(
         expect(rs.cull.enabled).toBe(true);
         expect(rs.cull.face).toBe(CullFace.FRONT);
         expect(rs.polygonOffset.enabled).toBe(true);
+
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
@@ -3916,6 +3920,8 @@ describe(
           isSelected(tileset, root.children[0].children[0].children[3])
         ).toBe(false);
         expect(tileset._hasMixedContent).toBe(false);
+
+        return Cesium3DTilesTester.waitForTilesLoaded(scene, tileset);
       });
     });
 
