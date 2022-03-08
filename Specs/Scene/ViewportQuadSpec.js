@@ -94,13 +94,9 @@ describe(
       viewportQuad.material = Material.fromType(Material.ImageType);
       viewportQuad.material.uniforms.image = texture;
 
-      pollToPromise(function () {
-        return viewportQuad.material._loadedImages.length !== 0;
-      }).then(function () {
-        expect(scene).toRender([0, 0, 0, 255]);
-        scene.primitives.add(viewportQuad);
-        expect(scene).toRender([255, 0, 0, 255]);
-      });
+      expect(scene).toRender([0, 0, 0, 255]);
+      scene.primitives.add(viewportQuad);
+      expect(scene).toRender([255, 0, 0, 255]);
     });
 
     it("updates rectangle", function () {
