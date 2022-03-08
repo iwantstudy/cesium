@@ -5,7 +5,6 @@ import { Texture } from "../../Source/Cesium.js";
 import { Material } from "../../Source/Cesium.js";
 import { ViewportQuad } from "../../Source/Cesium.js";
 import createScene from "../createScene.js";
-import pollToPromise from "../pollToPromise.js";
 
 describe(
   "Scene/ViewportQuad",
